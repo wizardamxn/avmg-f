@@ -1,1 +1,48 @@
 @import "tailwindcss";
+
+@layer base {
+  /* 1. THE INFINITE GRID BACKGROUND */
+  body {
+    @apply bg-[#050505];
+    background-image: 
+      linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: center center;
+    /* Adds a subtle fade at the top/bottom so it doesn't clash with headers */
+    mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+  }
+
+  /* 2. THE STEALTH SCROLLBAR */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-[#0a0a0a];
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-neutral-800 rounded-sm;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-neutral-700;
+  }
+}
+
+/* 3. TW v4 CUSTOM UTILITY: THE CRT TERMINAL SCANLINES */
+@utility crt-terminal {
+  position: relative;
+  
+  &::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
+    background-size: 100% 4px;
+    z-index: 10;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+}

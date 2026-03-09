@@ -8,23 +8,23 @@ const MediaConverter = () => {
   const [watermarkFile, setWatermarkFile] = useState(null);
   const [format, setFormat] = useState("mp3");
   const [quality, setQuality] = useState("best");
-  
+
   const [startTime, setStartTime] = useState("");
   const [duration, setDuration] = useState("");
 
-  const [status, setStatus] = useState("IDLE"); // IDLE, UPLOADING, POLLING, COMPLETED, ERROR
+  const [status, setStatus] = useState("IDLE");
   const [jobId, setJobId] = useState("");
   const [downloadUrl, setDownloadUrl] = useState("");
-
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   const handleFileChange = (e) => setFile(e.target.files[0]);
   const handleWatermarkChange = (e) => setWatermarkFile(e.target.files[0]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) return alert("Please select a file to convert.");
+    if (!file) return alert("ERR: NO PAYLOAD DETECTED.");
 
     setStatus("UPLOADING");
-    
+
     const formData = new FormData();
     formData.append("videoFile", file);
     if (watermarkFile) formData.append("watermarkFile", watermarkFile);
@@ -35,27 +35,26 @@ const MediaConverter = () => {
     if (duration) formData.append("duration", duration);
 
     try {
-      const res = await axios.post("http://localhost:5000/convert", formData, {
+      const res = await axios.post(`${apiUrl}/convert`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setJobId(res.data.jobId);
       setStatus("POLLING");
     } catch (error) {
-      console.error("Conversion failed:", error);
+      console.error("Transmission failed:", error);
       setStatus("ERROR");
     }
   };
 
-  // 📡 THE POLLING RADAR
   useEffect(() => {
     let intervalId;
     if (status === "POLLING" && jobId) {
       intervalId = setInterval(async () => {
         try {
-          const res = await axios.get(`http://localhost:5000/status/${jobId}`);
+          const res = await axios.get(`${apiUrl}/status/${jobId}`);
           if (res.data.status === "COMPLETED") {
             clearInterval(intervalId);
-            setDownloadUrl(`http://localhost:5000/${res.data.path}`);
+            setDownloadUrl(`${res.data.path}?download=`);
             setStatus("COMPLETED");
           } else if (res.data.status === "FAILED") {
             clearInterval(intervalId);
@@ -68,106 +67,125 @@ const MediaConverter = () => {
   }, [status, jobId]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white p-6 md:p-12 font-sans selection:bg-blue-500/30">
-      
+    <div className="min-h-screen bg-black text-white p-6 md:p-12 font-mono selection:bg-pink-500 selection:text-black">
       {/* TOP NAV */}
-      <div className="max-w-4xl mx-auto mb-12">
-        <Link href="/" className="inline-flex items-center text-sm font-medium text-neutral-400 hover:text-white transition-colors group">
-          <span className="mr-2 transform group-hover:-translate-x-1 transition-transform">←</span>
-          Back to Hub
+      <div className="max-w-5xl mx-auto mb-12">
+        <Link
+          href="/"
+          className="inline-block text-xl font-bold text-cyan-400 hover:text-black hover:bg-cyan-400 transition-colors uppercase tracking-widest border-2 border-cyan-400 px-4 py-2 shadow-[4px_4px_0_0_#ff00ff] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_#ff00ff]"
+        >
+          &lt;&lt; SYS.HUB_RETURN
         </Link>
       </div>
 
-      <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* LEFT COLUMN: THE FORM */}
+      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-12">
+        {/* LEFT COLUMN: THE HARDWARE FORM */}
         <div className="lg:col-span-2 flex flex-col gap-8">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight mb-2">Media Converter</h1>
-            <p className="text-neutral-400 text-sm">Upload local video or audio files and transcode them through the FFmpeg engine.</p>
+          <div className="border-l-8 border-pink-500 pl-4">
+            <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white drop-shadow-[4px_4px_0_#00ffff] uppercase mb-2">
+              AVMG_Media_Converter
+            </h1>
+            <p className="text-pink-400 font-bold tracking-widest text-sm uppercase">
+              // Local Transcode Engine v3.0
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6 bg-neutral-900/50 border border-white/5 p-6 md:p-8 rounded-2xl">
-            
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-8 bg-black border-4 border-cyan-400 p-6 md:p-8 shadow-[10px_10px_0_0_#ff00ff] relative"
+          >
             {/* FILE INPUTS */}
-            <div className="flex flex-col gap-4 border-b border-white/5 pb-6">
+            <div className="flex flex-col gap-6 border-b-4 border-cyan-400/50 pb-8">
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Source Payload <span className="text-blue-500">*</span></label>
+                <label className="text-sm font-black text-cyan-400 uppercase tracking-widest">
+                  [INPUT_PAYLOAD]{" "}
+                  <span className="text-pink-500 animate-pulse">*</span>
+                </label>
                 <input
                   type="file"
                   onChange={handleFileChange}
                   disabled={status === "UPLOADING" || status === "POLLING"}
-                  className="block w-full text-sm text-neutral-300 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-500/10 file:text-blue-400 hover:file:bg-blue-500/20 file:cursor-pointer bg-neutral-950 border border-white/10 rounded-lg p-1.5 focus:outline-none focus:border-blue-500/50 transition-colors disabled:opacity-50"
+                  className="block w-full text-sm text-white file:mr-4 file:py-3 file:px-4 file:border-0 file:border-r-4 file:border-cyan-400 file:text-sm file:font-black file:uppercase file:bg-cyan-400 file:text-black hover:file:bg-cyan-300 file:cursor-pointer border-2 border-cyan-400 bg-black focus:outline-none focus:border-pink-500 disabled:opacity-50 transition-colors cursor-pointer"
                 />
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Watermark Overlay (PNG)</label>
+                <label className="text-sm font-black text-yellow-400 uppercase tracking-widest">
+                  [WATERMARK_OVERLAY_PNG]
+                </label>
                 <input
                   type="file"
                   accept="image/png"
                   onChange={handleWatermarkChange}
                   disabled={status === "UPLOADING" || status === "POLLING"}
-                  className="block w-full text-sm text-neutral-300 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-neutral-800 file:text-neutral-300 hover:file:bg-neutral-700 file:cursor-pointer bg-neutral-950 border border-white/10 rounded-lg p-1.5 focus:outline-none transition-colors disabled:opacity-50"
+                  className="block w-full text-sm text-white file:mr-4 file:py-3 file:px-4 file:border-0 file:border-r-4 file:border-yellow-400 file:text-sm file:font-black file:uppercase file:bg-yellow-400 file:text-black hover:file:bg-yellow-300 file:cursor-pointer border-2 border-yellow-400 bg-black focus:outline-none transition-colors disabled:opacity-50 cursor-pointer"
                 />
               </div>
             </div>
 
             {/* SETTINGS GRID */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-b border-white/5 pb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-b-4 border-cyan-400/50 pb-8">
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Target Format</label>
+                <label className="text-sm font-black text-pink-500 uppercase tracking-widest">
+                  Target_Format
+                </label>
                 <select
                   value={format}
                   onChange={(e) => setFormat(e.target.value)}
                   disabled={status === "UPLOADING" || status === "POLLING"}
-                  className="bg-neutral-950 border border-white/10 text-white p-3 rounded-lg text-sm focus:outline-none focus:border-blue-500/50 transition-colors disabled:opacity-50 cursor-pointer"
+                  className="bg-black border-4 border-pink-500 text-pink-400 font-bold p-3 focus:outline-none focus:border-cyan-400 focus:text-cyan-400 transition-colors disabled:opacity-50 cursor-pointer rounded-none appearance-none"
                 >
-                  <option value="mp3">MP3 (Audio)</option>
-                  <option value="wav">WAV (Lossless Audio)</option>
-                  <option value="mp4">MP4 (Video)</option>
-                  <option value="gif">GIF (Animation)</option>
-                  <option value="jpg">JPG (Thumbnail Frame)</option>
+                  <option value="mp3">.MP3 (AUDIO)</option>
+                  <option value="wav">.WAV (LOSSLESS)</option>
+                  <option value="mp4">.MP4 (VIDEO)</option>
+                  <option value="gif">.GIF (ANIMATION)</option>
+                  <option value="jpg">.JPG (FRAME)</option>
                 </select>
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Compression Quality</label>
+                <label className="text-sm font-black text-green-400 uppercase tracking-widest">
+                  Compression
+                </label>
                 <select
                   value={quality}
                   onChange={(e) => setQuality(e.target.value)}
                   disabled={status === "UPLOADING" || status === "POLLING"}
-                  className="bg-neutral-950 border border-white/10 text-white p-3 rounded-lg text-sm focus:outline-none focus:border-blue-500/50 transition-colors disabled:opacity-50 cursor-pointer"
+                  className="bg-black border-4 border-green-500 text-green-400 font-bold p-3 focus:outline-none focus:border-cyan-400 transition-colors disabled:opacity-50 cursor-pointer rounded-none appearance-none"
                 >
-                  <option value="best">Studio / HD (Original)</option>
-                  <option value="good">Standard / 720p</option>
-                  <option value="draft">Draft / 480p</option>
+                  <option value="best">MAX_HD</option>
+                  <option value="good">MID_720P</option>
+                  <option value="draft">LOW_480P</option>
                 </select>
               </div>
             </div>
 
             {/* TIMELINE GRID */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-8">
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Start Time</label>
+                <label className="text-sm font-black text-purple-400 uppercase tracking-widest">
+                  Start_Time
+                </label>
                 <input
                   type="text"
                   placeholder="00:00:00"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
                   disabled={status === "UPLOADING" || status === "POLLING"}
-                  className="bg-neutral-950 border border-white/10 text-white p-3 rounded-lg text-sm focus:outline-none focus:border-blue-500/50 transition-colors disabled:opacity-50 placeholder-neutral-600"
+                  className="bg-black border-4 border-purple-500 text-purple-400 font-bold p-3 focus:outline-none focus:border-cyan-400 transition-colors disabled:opacity-50 placeholder-purple-800 rounded-none"
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Duration (Secs)</label>
+                <label className="text-sm font-black text-purple-400 uppercase tracking-widest">
+                  Duration (S)
+                </label>
                 <input
                   type="number"
                   placeholder="e.g. 15"
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
                   disabled={status === "UPLOADING" || status === "POLLING"}
-                  className="bg-neutral-950 border border-white/10 text-white p-3 rounded-lg text-sm focus:outline-none focus:border-blue-500/50 transition-colors disabled:opacity-50 placeholder-neutral-600"
+                  className="bg-black border-4 border-purple-500 text-purple-400 font-bold p-3 focus:outline-none focus:border-cyan-400 transition-colors disabled:opacity-50 placeholder-purple-800 rounded-none"
                 />
               </div>
             </div>
@@ -175,72 +193,83 @@ const MediaConverter = () => {
             <button
               type="submit"
               disabled={status === "UPLOADING" || status === "POLLING"}
-              className="mt-2 w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3.5 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-neutral-900 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
+              className="mt-6 w-full bg-pink-500 text-black font-black text-xl tracking-[0.3em] uppercase py-5 border-4 border-pink-500 shadow-[8px_8px_0_0_#39ff14] hover:bg-pink-400 hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[4px_4px_0_0_#39ff14] active:translate-x-[8px] active:translate-y-[8px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {status === "UPLOADING" ? "Transmitting..." : status === "POLLING" ? "Processing Engine Active..." : "Initialize Conversion"}
+              {status === "UPLOADING"
+                ? "TRANSMITTING..."
+                : status === "POLLING"
+                  ? "ENGINE_ACTIVE..."
+                  : "EXECUTE_JOB"}
             </button>
           </form>
         </div>
 
         {/* RIGHT COLUMN: STATUS TERMINAL */}
         <div className="flex flex-col gap-6">
-          <div className="bg-neutral-900/50 border border-white/5 p-6 rounded-2xl h-full min-h-[300px] flex flex-col relative overflow-hidden">
-            
-            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-6 pb-4 border-b border-white/5">
-              Terminal Output
-            </h3>
+          <div className="crt-terminal bg-black border-4 border-green-500 p-6 h-full min-h-[400px] flex flex-col relative overflow-hidden shadow-[8px_8px_0_0_#00ffff]">
+            <div className="flex justify-between items-center border-b-4 border-green-500/50 pb-4 mb-6 relative z-20">
+              <h3 className="text-lg font-black text-green-400 uppercase tracking-widest">
+                Term_Out
+              </h3>
+              <div className="flex gap-2">
+                <div className="w-3 h-3 bg-red-500 border border-red-300"></div>
+                <div className="w-3 h-3 bg-yellow-500 border border-yellow-300"></div>
+                <div className="w-3 h-3 bg-green-500 border border-green-300"></div>
+              </div>
+            </div>
 
-            <div className="flex-grow flex flex-col items-center justify-center text-center">
+            <div className="flex-grow flex flex-col items-start justify-center text-left relative z-20 w-full">
               {status === "IDLE" && (
-                <p className="text-neutral-500 text-sm">System standing by. Upload a payload to begin.</p>
+                <div className="text-green-500 font-bold uppercase tracking-widest">
+                  <p className="mb-2">{`> SYSTEM.READY`}</p>
+                  <p className="animate-pulse">{`> AWAITING.PAYLOAD_`}</p>
+                </div>
               )}
 
               {status === "UPLOADING" && (
-                <div className="flex flex-col items-center gap-3 animate-in fade-in zoom-in duration-300">
-                  <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
-                  <p className="text-blue-400 text-sm font-medium">Transferring to node...</p>
+                <div className="text-cyan-400 font-bold uppercase tracking-widest w-full">
+                  <p className="mb-4">{`> INITIALIZING_TRANSFER...`}</p>
+                  <div className="w-full h-4 border-2 border-cyan-400 p-0.5">
+                    <div className="h-full bg-cyan-400 w-1/3 animate-pulse"></div>
+                  </div>
                 </div>
               )}
 
               {status === "POLLING" && (
-                <div className="flex flex-col items-center gap-4 w-full px-4 animate-in fade-in duration-300">
-                  <div className="w-full h-1.5 bg-neutral-950 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 w-full origin-left animate-[pulse_1s_ease-in-out_infinite]"></div>
+                <div className="text-yellow-400 font-bold uppercase tracking-widest w-full">
+                  <p className="mb-2">{`> ENGINE_LOCKED.`}</p>
+                  <p className="mb-4">{`> TRACKING_JOB: ${jobId.slice(0, 8)}`}</p>
+                  <div className="w-full h-6 flex gap-1">
+                    <div className="h-full w-4 bg-yellow-400 animate-[ping_1s_infinite]"></div>
+                    <div className="h-full w-4 bg-yellow-400 animate-[ping_1.2s_infinite]"></div>
+                    <div className="h-full w-4 bg-yellow-400 animate-[ping_1.4s_infinite]"></div>
                   </div>
-                  <p className="text-blue-400 text-sm font-medium font-mono">
-                    Tracking Job ID: <br/><span className="text-xs text-neutral-500">{jobId.slice(0, 12)}...</span>
-                  </p>
                 </div>
               )}
 
               {status === "COMPLETED" && (
-                <div className="flex flex-col items-center gap-5 animate-in zoom-in duration-300">
-                  <div className="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center border border-green-500/30">
-                    <span className="text-green-500 text-xl">✓</span>
-                  </div>
-                  <p className="text-green-400 text-sm font-semibold tracking-wide">TASK SUCCESSFUL</p>
+                <div className="text-pink-500 font-black uppercase tracking-widest w-full">
+                  <p className="mb-2 text-2xl drop-shadow-[2px_2px_0_#00ffff]">{`> JOB_SUCCESS.`}</p>
+                  <p className="mb-8 text-white">{`> PAYLOAD SECURED.`}</p>
                   <a
                     href={downloadUrl}
                     download
-                    className="w-full bg-neutral-800 hover:bg-neutral-700 border border-white/10 text-white font-medium py-2 px-6 rounded-lg transition-colors text-sm"
+                    className="block w-full text-center bg-cyan-400 text-black font-black py-4 border-4 border-cyan-400 hover:bg-black hover:text-cyan-400 transition-colors shadow-[4px_4px_0_0_#ff00ff]"
                   >
-                    Download File
+                    [ DOWNLOAD_FILE ]
                   </a>
                 </div>
               )}
 
               {status === "ERROR" && (
-                <div className="flex flex-col items-center gap-3 animate-in fade-in duration-300">
-                  <div className="w-10 h-10 bg-red-500/10 rounded-full flex items-center justify-center border border-red-500/30">
-                    <span className="text-red-500 font-bold">!</span>
-                  </div>
-                  <p className="text-red-400 text-sm font-medium">Processing sequence failed.</p>
+                <div className="text-red-500 font-black uppercase tracking-widest w-full">
+                  <p className="text-2xl mb-2 animate-pulse">{`> FATAL_ERR`}</p>
+                  <p className="text-white bg-red-500 p-2 inline-block">{`> CORE_MELTDOWN.`}</p>
                 </div>
               )}
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
