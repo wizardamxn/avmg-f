@@ -1,7 +1,7 @@
 // app/api/webhook/route.js
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(request) {
+export async function POST(request: NextRequest) {
   try {
     // 1. Pick up the phone! (Parse the JSON sent by your Express Worker)
     const payload = await request.json();
