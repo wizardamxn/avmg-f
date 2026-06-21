@@ -15,7 +15,7 @@ const TheForge = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!videoUrl) return alert("ERR: MISSING NETWORK COORDINATES.");
+    if (!videoUrl) return alert("Please paste a link first.");
 
     setStatus("UPLOADING");
 
@@ -66,7 +66,7 @@ const TheForge = () => {
           href="/"
           className="inline-block text-xl font-bold text-pink-500 hover:text-black hover:bg-pink-500 transition-colors uppercase tracking-widest border-2 border-pink-500 px-4 py-2 shadow-[4px_4px_0_0_#00ffff] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_#00ffff]"
         >
-          &lt;&lt; SYS.HUB_RETURN
+          &lt;&lt; BACK TO HOME
         </Link>
       </div>
 
@@ -75,10 +75,10 @@ const TheForge = () => {
         <div className="lg:col-span-2 flex flex-col gap-8">
           <div className="border-l-8 border-pink-500 pl-4">
             <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white drop-shadow-[4px_4px_0_#ff00ff] uppercase mb-2">
-              THE_FORGE
+              DOWNLOAD + CONVERT
             </h1>
             <p className="text-cyan-400 font-bold tracking-widest text-sm uppercase">
-              // Heavy Payload Mutation Engine
+              // THE FORGE — download a link and convert it in one step
             </p>
           </div>
 
@@ -90,7 +90,7 @@ const TheForge = () => {
             <div className="flex flex-col gap-6 border-b-4 border-pink-500/50 pb-8">
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-black text-cyan-400 uppercase tracking-widest">
-                  [NETWORK_URL_DESIGNATION]{" "}
+                  PASTE A LINK{" "}
                   <span className="text-pink-500 animate-pulse">*</span>
                 </label>
                 <input
@@ -108,7 +108,7 @@ const TheForge = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-black text-yellow-400 uppercase tracking-widest">
-                  [MUTATION_VECTOR]
+                  Output Format
                 </label>
                 <select
                   value={format}
@@ -116,17 +116,17 @@ const TheForge = () => {
                   disabled={status === "UPLOADING" || status === "POLLING"}
                   className="bg-black border-4 border-yellow-400 text-yellow-400 font-bold p-3 focus:outline-none focus:border-pink-500 transition-colors disabled:opacity-50 cursor-pointer rounded-none appearance-none"
                 >
-                  <option value="mp3">.MP3 (AUDIO_EXTRACT)</option>
-                  <option value="wav">.WAV (LOSSLESS_AUDIO)</option>
-                  <option value="mp4">.MP4 (VIDEO_CONTAINER)</option>
-                  <option value="gif">.GIF (ANIMATION_LOOP)</option>
-                  <option value="jpg">.JPG (THUMBNAIL_SNAP)</option>
+                  <option value="mp3">.MP3 (AUDIO)</option>
+                  <option value="wav">.WAV (LOSSLESS AUDIO)</option>
+                  <option value="mp4">.MP4 (VIDEO)</option>
+                  <option value="gif">.GIF (ANIMATION)</option>
+                  <option value="jpg">.JPG (THUMBNAIL IMAGE)</option>
                 </select>
               </div>
 
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-black text-green-400 uppercase tracking-widest">
-                  [EXTRACTION_QUALITY]
+                  Quality
                 </label>
                 <select
                   value={quality}
@@ -134,9 +134,9 @@ const TheForge = () => {
                   disabled={status === "UPLOADING" || status === "POLLING"}
                   className="bg-black border-4 border-green-500 text-green-400 font-bold p-3 focus:outline-none focus:border-pink-500 transition-colors disabled:opacity-50 cursor-pointer rounded-none appearance-none"
                 >
-                  <option value="best">MAXIMUM_OVERDRIVE</option>
-                  <option value="good">STANDARD_OPTIMIZED</option>
-                  <option value="draft">COMPRESSED_DRAFT</option>
+                  <option value="best">BEST QUALITY</option>
+                  <option value="good">MEDIUM</option>
+                  <option value="draft">LOW (SMALLEST FILE)</option>
                 </select>
               </div>
             </div>
@@ -147,10 +147,10 @@ const TheForge = () => {
               className="mt-6 w-full bg-cyan-400 text-black font-black text-xl tracking-[0.3em] uppercase py-5 border-4 border-cyan-400 shadow-[8px_8px_0_0_#ff00ff] hover:bg-cyan-300 hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[4px_4px_0_0_#ff00ff] active:translate-x-[8px] active:translate-y-[8px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {status === "UPLOADING"
-                ? "TRANSMITTING..."
+                ? "STARTING..."
                 : status === "POLLING"
-                  ? "FORGE_IS_BURNING..."
-                  : "IGNITE_PROTOCOL"}
+                  ? "WORKING..."
+                  : "DOWNLOAD + CONVERT"}
             </button>
           </form>
         </div>
@@ -160,7 +160,7 @@ const TheForge = () => {
           <div className="crt-terminal bg-black border-4 border-purple-500 p-6 h-full min-h-[400px] flex flex-col relative overflow-hidden shadow-[8px_8px_0_0_#00ffff]">
             <div className="flex justify-between items-center border-b-4 border-purple-500/50 pb-4 mb-6 relative z-20">
               <h3 className="text-lg font-black text-purple-400 uppercase tracking-widest">
-                Term_Out
+Status
               </h3>
               <div className="flex gap-2">
                 <div className="w-3 h-3 bg-cyan-400 border border-cyan-200"></div>
@@ -172,15 +172,15 @@ const TheForge = () => {
             <div className="flex-grow flex flex-col items-start justify-center text-left relative z-20 w-full">
               {status === "IDLE" && (
                 <div className="text-purple-400 font-bold uppercase tracking-widest">
-                  <p className="mb-2">{`> FORGE_IDLE`}</p>
-                  <p className="animate-pulse">{`> AWAITING.COORDINATES_`}</p>
+                  <p className="mb-2">{`> Ready`}</p>
+                  <p className="animate-pulse">{`> Waiting for a link..._`}</p>
                 </div>
               )}
 
               {status === "UPLOADING" && (
                 <div className="text-cyan-400 font-bold uppercase tracking-widest w-full">
-                  <p className="mb-4">{`> LOCKING_ON_TARGET...`}</p>
-                  <p className="mb-4 text-xs">{`> ESTABLISHING_COM_LINK...`}</p>
+                  <p className="mb-4">{`> Connecting...`}</p>
+                  <p className="mb-4 text-xs">{`> Fetching the video...`}</p>
                   <div className="w-full h-4 border-2 border-cyan-400 p-0.5">
                     <div className="h-full bg-cyan-400 w-1/2 animate-pulse"></div>
                   </div>
@@ -189,8 +189,8 @@ const TheForge = () => {
 
               {status === "POLLING" && (
                 <div className="text-pink-500 font-bold uppercase tracking-widest w-full">
-                  <p className="mb-2">{`> FORGE_IGNITED.`}</p>
-                  <p className="mb-4 text-xs">{`> MUTATING_PAYLOAD: ${jobId.slice(0, 8)}`}</p>
+                  <p className="mb-2">{`> Converting...`}</p>
+                  <p className="mb-4 text-xs">{`> Job: ${jobId.slice(0, 8)}`}</p>
                   <div className="w-full h-8 flex gap-2">
                     <div className="h-full w-full bg-pink-500 animate-[pulse_0.5s_infinite]"></div>
                     <div className="h-full w-full bg-red-500 animate-[pulse_0.7s_infinite]"></div>
@@ -201,22 +201,22 @@ const TheForge = () => {
 
               {status === "COMPLETED" && (
                 <div className="text-cyan-400 font-black uppercase tracking-widest w-full">
-                  <p className="mb-2 text-2xl drop-shadow-[2px_2px_0_#ff00ff]">{`> MUTATION_SUCCESS.`}</p>
-                  <p className="mb-8 text-white">{`> PAYLOAD_READY_FOR_EXTRACT.`}</p>
+                  <p className="mb-2 text-2xl drop-shadow-[2px_2px_0_#ff00ff]">{`> Done!`}</p>
+                  <p className="mb-8 text-white">{`> Your file is ready.`}</p>
                   <a
                     href={downloadUrl}
                     download
                     className="block w-full text-center bg-pink-500 text-black font-black py-4 border-4 border-pink-500 hover:bg-black hover:text-pink-500 transition-colors shadow-[4px_4px_0_0_#00ffff]"
                   >
-                    [ EXTRACT_MUTATION ]
+                    [ DOWNLOAD ]
                   </a>
                 </div>
               )}
 
               {status === "ERROR" && (
                 <div className="text-red-500 font-black uppercase tracking-widest w-full">
-                  <p className="text-2xl mb-2 animate-pulse">{`> FORGE_COLLAPSE`}</p>
-                  <p className="text-white bg-red-500 p-2 inline-block">{`> MUTATION_FAILED.`}</p>
+                  <p className="text-2xl mb-2 animate-pulse">{`> Something went wrong`}</p>
+                  <p className="text-white bg-red-500 p-2 inline-block">{`> Please try again.`}</p>
                 </div>
               )}
             </div>

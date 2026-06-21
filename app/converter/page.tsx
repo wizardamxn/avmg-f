@@ -21,7 +21,7 @@ const MediaConverter = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) return alert("ERR: NO PAYLOAD DETECTED.");
+    if (!file) return alert("Please choose a file first.");
 
     setStatus("UPLOADING");
 
@@ -74,7 +74,7 @@ const MediaConverter = () => {
           href="/"
           className="inline-block text-xl font-bold text-cyan-400 hover:text-black hover:bg-cyan-400 transition-colors uppercase tracking-widest border-2 border-cyan-400 px-4 py-2 shadow-[4px_4px_0_0_#ff00ff] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_#ff00ff]"
         >
-          &lt;&lt; SYS.HUB_RETURN
+          &lt;&lt; BACK TO HOME
         </Link>
       </div>
 
@@ -83,10 +83,10 @@ const MediaConverter = () => {
         <div className="lg:col-span-2 flex flex-col gap-8">
           <div className="border-l-8 border-pink-500 pl-4">
             <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white drop-shadow-[4px_4px_0_#00ffff] uppercase mb-2">
-              AVMG_Media_Converter
+              MEDIA CONVERTER
             </h1>
             <p className="text-pink-400 font-bold tracking-widest text-sm uppercase">
-              // Local Transcode Engine v3.0
+              // Convert a file on your device into another format
             </p>
           </div>
 
@@ -98,7 +98,7 @@ const MediaConverter = () => {
             <div className="flex flex-col gap-6 border-b-4 border-cyan-400/50 pb-8">
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-black text-cyan-400 uppercase tracking-widest">
-                  [INPUT_PAYLOAD]{" "}
+                  [ CHOOSE A FILE ]{" "}
                   <span className="text-pink-500 animate-pulse">*</span>
                 </label>
                 <input
@@ -111,7 +111,7 @@ const MediaConverter = () => {
 
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-black text-yellow-400 uppercase tracking-widest">
-                  [WATERMARK_OVERLAY_PNG]
+                  WATERMARK — PNG, OPTIONAL
                 </label>
                 <input
                   type="file"
@@ -127,7 +127,7 @@ const MediaConverter = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-b-4 border-cyan-400/50 pb-8">
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-black text-pink-500 uppercase tracking-widest">
-                  Target_Format
+                  Output Format
                 </label>
                 <select
                   value={format}
@@ -145,7 +145,7 @@ const MediaConverter = () => {
 
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-black text-green-400 uppercase tracking-widest">
-                  Compression
+                  Quality
                 </label>
                 <select
                   value={quality}
@@ -153,9 +153,9 @@ const MediaConverter = () => {
                   disabled={status === "UPLOADING" || status === "POLLING"}
                   className="bg-black border-4 border-green-500 text-green-400 font-bold p-3 focus:outline-none focus:border-cyan-400 transition-colors disabled:opacity-50 cursor-pointer rounded-none appearance-none"
                 >
-                  <option value="best">MAX_HD</option>
-                  <option value="good">MID_720P</option>
-                  <option value="draft">LOW_480P</option>
+                  <option value="best">BEST QUALITY</option>
+                  <option value="good">MEDIUM (720P)</option>
+                  <option value="draft">LOW (480P, SMALLEST)</option>
                 </select>
               </div>
             </div>
@@ -164,7 +164,7 @@ const MediaConverter = () => {
             <div className="grid grid-cols-2 gap-8">
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-black text-purple-400 uppercase tracking-widest">
-                  Start_Time
+                  Start Time — Optional
                 </label>
                 <input
                   type="text"
@@ -177,7 +177,7 @@ const MediaConverter = () => {
               </div>
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-black text-purple-400 uppercase tracking-widest">
-                  Duration (S)
+                  Length in Seconds — Optional
                 </label>
                 <input
                   type="number"
@@ -196,10 +196,10 @@ const MediaConverter = () => {
               className="mt-6 w-full bg-pink-500 text-black font-black text-xl tracking-[0.3em] uppercase py-5 border-4 border-pink-500 shadow-[8px_8px_0_0_#39ff14] hover:bg-pink-400 hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[4px_4px_0_0_#39ff14] active:translate-x-[8px] active:translate-y-[8px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {status === "UPLOADING"
-                ? "TRANSMITTING..."
+                ? "UPLOADING..."
                 : status === "POLLING"
-                  ? "ENGINE_ACTIVE..."
-                  : "EXECUTE_JOB"}
+                  ? "CONVERTING..."
+                  : "CONVERT FILE"}
             </button>
           </form>
         </div>
@@ -209,7 +209,7 @@ const MediaConverter = () => {
           <div className="crt-terminal bg-black border-4 border-green-500 p-6 h-full min-h-[400px] flex flex-col relative overflow-hidden shadow-[8px_8px_0_0_#00ffff]">
             <div className="flex justify-between items-center border-b-4 border-green-500/50 pb-4 mb-6 relative z-20">
               <h3 className="text-lg font-black text-green-400 uppercase tracking-widest">
-                Term_Out
+Status
               </h3>
               <div className="flex gap-2">
                 <div className="w-3 h-3 bg-red-500 border border-red-300"></div>
@@ -221,14 +221,14 @@ const MediaConverter = () => {
             <div className="flex-grow flex flex-col items-start justify-center text-left relative z-20 w-full">
               {status === "IDLE" && (
                 <div className="text-green-500 font-bold uppercase tracking-widest">
-                  <p className="mb-2">{`> SYSTEM.READY`}</p>
-                  <p className="animate-pulse">{`> AWAITING.PAYLOAD_`}</p>
+                  <p className="mb-2">{`> Ready`}</p>
+                  <p className="animate-pulse">{`> Waiting for a file..._`}</p>
                 </div>
               )}
 
               {status === "UPLOADING" && (
                 <div className="text-cyan-400 font-bold uppercase tracking-widest w-full">
-                  <p className="mb-4">{`> INITIALIZING_TRANSFER...`}</p>
+                  <p className="mb-4">{`> Uploading your file...`}</p>
                   <div className="w-full h-4 border-2 border-cyan-400 p-0.5">
                     <div className="h-full bg-cyan-400 w-1/3 animate-pulse"></div>
                   </div>
@@ -237,8 +237,8 @@ const MediaConverter = () => {
 
               {status === "POLLING" && (
                 <div className="text-yellow-400 font-bold uppercase tracking-widest w-full">
-                  <p className="mb-2">{`> ENGINE_LOCKED.`}</p>
-                  <p className="mb-4">{`> TRACKING_JOB: ${jobId.slice(0, 8)}`}</p>
+                  <p className="mb-2">{`> Converting your file...`}</p>
+                  <p className="mb-4">{`> Job: ${jobId.slice(0, 8)}`}</p>
                   <div className="w-full h-6 flex gap-1">
                     <div className="h-full w-4 bg-yellow-400 animate-[ping_1s_infinite]"></div>
                     <div className="h-full w-4 bg-yellow-400 animate-[ping_1.2s_infinite]"></div>
@@ -249,22 +249,22 @@ const MediaConverter = () => {
 
               {status === "COMPLETED" && (
                 <div className="text-pink-500 font-black uppercase tracking-widest w-full">
-                  <p className="mb-2 text-2xl drop-shadow-[2px_2px_0_#00ffff]">{`> JOB_SUCCESS.`}</p>
-                  <p className="mb-8 text-white">{`> PAYLOAD SECURED.`}</p>
+                  <p className="mb-2 text-2xl drop-shadow-[2px_2px_0_#00ffff]">{`> Done!`}</p>
+                  <p className="mb-8 text-white">{`> Your file is ready.`}</p>
                   <a
                     href={downloadUrl}
                     download
                     className="block w-full text-center bg-cyan-400 text-black font-black py-4 border-4 border-cyan-400 hover:bg-black hover:text-cyan-400 transition-colors shadow-[4px_4px_0_0_#ff00ff]"
                   >
-                    [ DOWNLOAD_FILE ]
+                    [ DOWNLOAD ]
                   </a>
                 </div>
               )}
 
               {status === "ERROR" && (
                 <div className="text-red-500 font-black uppercase tracking-widest w-full">
-                  <p className="text-2xl mb-2 animate-pulse">{`> FATAL_ERR`}</p>
-                  <p className="text-white bg-red-500 p-2 inline-block">{`> CORE_MELTDOWN.`}</p>
+                  <p className="text-2xl mb-2 animate-pulse">{`> Something went wrong`}</p>
+                  <p className="text-white bg-red-500 p-2 inline-block">{`> Please try again.`}</p>
                 </div>
               )}
             </div>

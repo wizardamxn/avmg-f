@@ -12,8 +12,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AVMG | Universal Media Forge",
-  description: "Orbital media processing, downloading, and mutation engine.",
+  title: "AVMG | Download & Convert Media",
+  description: "Download videos, convert media to other formats, and pull subtitles as text — all in one place.",
 };
 export default function RootLayout({
   children,

@@ -15,8 +15,8 @@ const AppHub = () => {
   const tools = [
     {
       id: "converter",
-      title: "MEDIA_CONVERTER",
-      description: "> UPLOAD LOCAL PAYLOADS. TRANSCODE VIDEO TO AUDIO, ANIMATE GIFS, OR CRUSH MEDIA SIZES.",
+      title: "MEDIA CONVERTER",
+      description: "> Upload a file from your device and turn it into MP3, MP4, GIF, WAV, or an image. You can also trim it, shrink the size, or add a watermark.",
       icon: "[///]",
       path: "/converter",
       theme: "border-pink-500 text-pink-500 shadow-[8px_8px_0_0_#ff00ff] hover:bg-pink-500 hover:text-black",
@@ -24,8 +24,8 @@ const AppHub = () => {
     },
     {
       id: "downloader",
-      title: "NET_RIPPER",
-      description: "> BYPASS DOMAIN SECURITY. RIP RAW, UNCOMPRESSED VIDEO OR AUDIO FROM TARGET URLS.",
+      title: "VIDEO DOWNLOADER",
+      description: "> Paste a link from YouTube or another site and download the video or audio to your device.",
       icon: "[\\/]",
       path: "/downloader",
       theme: "border-green-500 text-green-500 shadow-[8px_8px_0_0_#39ff14] hover:bg-green-500 hover:text-black",
@@ -33,8 +33,8 @@ const AppHub = () => {
     },
     {
       id: "forge",
-      title: "THE_FORGE",
-      description: "> SIMULTANEOUS PULL & MUTATE. RIP A STREAM STRAIGHT TO A CLIPPED .MP3 IN ONE MOTION.",
+      title: "DOWNLOAD + CONVERT",
+      description: "> Paste a link and get it back in the format you want in one step — for example, a YouTube link straight to an MP3.",
       icon: "[><]",
       path: "/forge",
       theme: "border-cyan-400 text-cyan-400 shadow-[8px_8px_0_0_#00ffff] hover:bg-cyan-400 hover:text-black",
@@ -42,8 +42,8 @@ const AppHub = () => {
     },
     {
       id: "notes",
-      title: "GHOST_PROTOCOL",
-      description: "> STEALTH SUBTITLE EXTRACTION. SCRAPE VTT DATA FOR AI INGESTION WITHOUT DOWNLOADING MEDIA.",
+      title: "SUBTITLES TO TEXT",
+      description: "> Paste a link and get the video's subtitles as a clean text file — great for notes or pasting into AI tools. No video download needed.",
       icon: "[_X]",
       path: "/notes",
       theme: "border-purple-500 text-purple-500 shadow-[8px_8px_0_0_#9333ea] hover:bg-purple-500 hover:text-black",
@@ -75,13 +75,16 @@ const AppHub = () => {
           <p className="text-cyan-400 font-bold tracking-widest text-sm md:text-lg uppercase">
             // A_Virgen_Mui_Groriosa
           </p>
+          <p className="text-white/70 font-bold text-xs md:text-sm mt-3 normal-case tracking-normal">
+            Download, convert, and pull text from videos — all in one place. Pick a tool below.
+          </p>
         </div>
         
         {/* TELEMETRY LINK */}
         <Link href="/dashboard" className="group">
           <div className="bg-black border-4 border-white p-4 shadow-[6px_6px_0_0_#ffffff] group-hover:translate-x-[2px] group-hover:translate-y-[2px] group-hover:shadow-[4px_4px_0_0_#ffffff] transition-all cursor-pointer">
             <p className="text-white font-black uppercase tracking-widest text-sm group-hover:animate-pulse">
-              [ ACCESS_TELEMETRY ]
+              [ VIEW HISTORY ]
             </p>
           </div>
         </Link>
@@ -116,7 +119,7 @@ const AppHub = () => {
                 </p>
                 
                 <div className="mt-auto flex items-center text-sm font-black uppercase tracking-widest group-hover:text-black">
-                  [ INITIATE_BOOT_SEQ ] 
+                  [ OPEN TOOL ]
                   <span className="ml-3 transform group-hover:translate-x-2 transition-transform">
                     &gt;&gt;
                   </span>
@@ -130,7 +133,7 @@ const AppHub = () => {
       
       {/* FOOTER DECORATION */}
       <div className="max-w-6xl w-full mx-auto mt-20 border-t-4 border-neutral-800 pt-8 flex justify-between items-center text-neutral-600 font-bold text-xs tracking-widest uppercase">
-        <p>AVMG // ILLEGAL_TECH // NO_WARRANTY</p>
+        <p>AVMG // MEDIA TOOLKIT // USE RESPONSIBLY</p>
         <p>END_OF_LINE.</p>
       </div>
 
