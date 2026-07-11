@@ -1,75 +1,75 @@
 "use client";
-import axios from "axios";
-import { useState, useEffect } from "react";
-import Link from "next/link";
+
+import { useEffect, useState } from "react";
+import api, { apiError } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { useJobPolling } from "@/hooks/useJobPolling";
+import PageShell from "@/components/ui/PageShell";
+import TerminalPanel from "@/components/ui/TerminalPanel";
+import Button from "@/components/ui/Button";
+import { Field, Input } from "@/components/ui/Field";
+import Dropdown from "@/components/ui/Dropdown";
+import { GuestHint, UpsellError } from "@/components/ui/ToolBits";
+
+type Phase = "IDLE" | "CONNECTING" | "WORKING" | "DONE" | "ERROR";
+
+const QUALITY_OPTIONS = [
+  { value: "best", label: "BEST QUALITY" },
+  { value: "good", label: "MEDIUM" },
+  { value: "draft", label: "LOW (SMALLEST FILE)" },
+];
 
 const UniversalDownloader = () => {
+  const { user } = useAuth();
   const [videoUrl, setVideoUrl] = useState("");
   const [quality, setQuality] = useState("best");
 
-  const [status, setStatus] = useState("IDLE");
-  const [jobId, setJobId] = useState("");
+  const [phase, setPhase] = useState<Phase>("IDLE");
+  const [jobId, setJobId] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState("");
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const [errorMsg, setErrorMsg] = useState("");
+  const [upsell, setUpsell] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const job = useJobPolling(phase === "WORKING" ? jobId : null);
+
+  useEffect(() => {
+    if (!job) return;
+    if (job.status === "COMPLETED") {
+      setDownloadUrl(`${job.path}?download=`);
+      setPhase("DONE");
+    } else if (job.status === "FAILED") {
+      setErrorMsg(job.error || "Couldn't download this link.");
+      setUpsell(false);
+      setPhase("ERROR");
+    }
+  }, [job]);
+
+  const busy = phase === "CONNECTING" || phase === "WORKING";
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!videoUrl) return alert("Please paste a link first.");
 
-    setStatus("UPLOADING");
-
-    const payload = {
-      videoUrl: videoUrl,
-      quality: quality,
-      webhookUrl: "http://localhost:3000/api/webhook",
-    };
+    setPhase("CONNECTING");
+    setErrorMsg("");
+    setUpsell(false);
 
     try {
-      const res = await axios.post(`${apiUrl}/download`, payload, {
-        headers: { "Content-Type": "application/json" },
-      });
+      const res = await api.post("/download", { videoUrl, quality });
       setJobId(res.data.jobId);
-      setStatus("POLLING");
+      setPhase("WORKING");
     } catch (error) {
-      console.error("Download failed:", error);
-      setStatus("ERROR");
+      const status = (error as { response?: { status?: number } }).response?.status;
+      setErrorMsg(apiError(error, "Couldn't start the download."));
+      setUpsell(!user && (status === 413 || status === 429));
+      setPhase("ERROR");
     }
   };
 
-  useEffect(() => {
-    let intervalId;
-    if (status === "POLLING" && jobId) {
-      intervalId = setInterval(async () => {
-        try {
-          const res = await axios.get(`${apiUrl}/status/${jobId}`);
-          if (res.data.status === "COMPLETED") {
-            clearInterval(intervalId);
-            setDownloadUrl(`${res.data.path}?download=`);
-            setStatus("COMPLETED");
-          } else if (res.data.status === "FAILED") {
-            clearInterval(intervalId);
-            setStatus("ERROR");
-          }
-        } catch (error) {}
-      }, 3000);
-    }
-    return () => clearInterval(intervalId);
-  }, [status, jobId]);
-
   return (
-    <div className="min-h-screen bg-black text-white p-6 md:p-12 font-mono selection:bg-yellow-400 selection:text-black">
-      {/* TOP NAV */}
-      <div className="max-w-5xl mx-auto mb-12">
-        <Link
-          href="/"
-          className="inline-block text-xl font-bold text-yellow-400 hover:text-black hover:bg-yellow-400 transition-colors uppercase tracking-widest border-2 border-yellow-400 px-4 py-2 shadow-[4px_4px_0_0_#39ff14] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_#39ff14]"
-        >
-          &lt;&lt; BACK TO HOME
-        </Link>
-      </div>
-
-      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {/* LEFT COLUMN: THE HARDWARE FORM */}
+    <PageShell selection="yellow" maxWidth="5xl">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        {/* LEFT: FORM */}
         <div className="lg:col-span-2 flex flex-col gap-8">
           <div className="border-l-8 border-yellow-400 pl-4">
             <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white drop-shadow-[4px_4px_0_#39ff14] uppercase mb-2">
@@ -80,84 +80,68 @@ const UniversalDownloader = () => {
             </p>
           </div>
 
+          <GuestHint
+            show={!user}
+            text="GUEST: 50MB CAP // 3 JOBS/DAY — sign up free to lift the cap"
+          />
+
           <form
             onSubmit={handleSubmit}
             className="flex flex-col gap-8 bg-black border-4 border-green-500 p-6 md:p-8 shadow-[10px_10px_0_0_#ffff00] relative"
           >
-            {/* NETWORK INPUT */}
             <div className="flex flex-col gap-6 border-b-4 border-green-500/50 pb-8">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-black text-green-400 uppercase tracking-widest">
-                  PASTE A LINK{" "}
-                  <span className="text-yellow-400 animate-pulse">*</span>
-                </label>
-                <input
+              <Field label="PASTE A LINK" labelColor="green" required requiredColor="yellow">
+                <Input
                   type="url"
                   placeholder="HTTPS://..."
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
-                  disabled={status === "UPLOADING" || status === "POLLING"}
-                  className="bg-black border-4 border-green-500 text-green-400 font-bold p-4 focus:outline-none focus:border-yellow-400 focus:text-yellow-400 transition-colors disabled:opacity-50 placeholder-green-900 rounded-none w-full"
+                  disabled={busy}
+                  color="green"
+                  focus="yellow"
                 />
-              </div>
+              </Field>
             </div>
 
-            {/* SETTINGS GRID */}
-            <div className="grid grid-cols-1 gap-6">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-black text-cyan-400 uppercase tracking-widest">
-                  Quality
-                </label>
-                <select
-                  value={quality}
-                  onChange={(e) => setQuality(e.target.value)}
-                  disabled={status === "UPLOADING" || status === "POLLING"}
-                  className="bg-black border-4 border-cyan-400 text-cyan-400 font-bold p-3 focus:outline-none focus:border-yellow-400 focus:text-yellow-400 transition-colors disabled:opacity-50 cursor-pointer rounded-none appearance-none"
-                >
-                  <option value="best">BEST QUALITY</option>
-                  <option value="good">MEDIUM</option>
-                  <option value="draft">LOW (SMALLEST FILE)</option>
-                </select>
-              </div>
-            </div>
+            <Field label="Quality" labelColor="cyan">
+              <Dropdown
+                value={quality}
+                onChange={setQuality}
+                options={QUALITY_OPTIONS}
+                disabled={busy}
+                color="cyan"
+                shadow="yellow"
+              />
+            </Field>
 
-            <button
-              type="submit"
-              disabled={status === "UPLOADING" || status === "POLLING"}
-              className="mt-6 w-full bg-green-500 text-black font-black text-xl tracking-[0.3em] uppercase py-5 border-4 border-green-500 shadow-[8px_8px_0_0_#ffff00] hover:bg-green-400 hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[4px_4px_0_0_#ffff00] active:translate-x-[8px] active:translate-y-[8px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {status === "UPLOADING"
+            <Button type="submit" color="green" shadow="yellow" disabled={busy}>
+              {phase === "CONNECTING"
                 ? "CONNECTING..."
-                : status === "POLLING"
+                : phase === "WORKING"
                   ? "DOWNLOADING..."
                   : "DOWNLOAD"}
-            </button>
+            </Button>
           </form>
         </div>
 
-        {/* RIGHT COLUMN: STATUS TERMINAL */}
+        {/* RIGHT: STATUS */}
         <div className="flex flex-col gap-6">
-          <div className="crt-terminal bg-black border-4 border-orange-500 p-6 h-full min-h-[400px] flex flex-col relative overflow-hidden shadow-[8px_8px_0_0_#ff00ff]">
-            <div className="flex justify-between items-center border-b-4 border-orange-500/50 pb-4 mb-6 relative z-20">
-              <h3 className="text-lg font-black text-orange-400 uppercase tracking-widest">
-Status
-              </h3>
-              <div className="flex gap-2">
-                <div className="w-3 h-3 bg-orange-500 border border-orange-300"></div>
-                <div className="w-3 h-3 bg-orange-500 border border-orange-300"></div>
-                <div className="w-3 h-3 bg-orange-500 border border-orange-300"></div>
-              </div>
-            </div>
-
-            <div className="flex-grow flex flex-col items-start justify-center text-left relative z-20 w-full">
-              {status === "IDLE" && (
+          <TerminalPanel
+            title="STATUS"
+            color="orange"
+            shadow="pink"
+            dots={["orange", "orange", "orange"]}
+            className="h-full min-h-[400px]"
+          >
+            <div className="flex-grow flex flex-col items-start justify-center text-left w-full">
+              {phase === "IDLE" && (
                 <div className="text-orange-400 font-bold uppercase tracking-widest">
                   <p className="mb-2">{`> Ready`}</p>
                   <p className="animate-pulse">{`> Waiting for a link..._`}</p>
                 </div>
               )}
 
-              {status === "UPLOADING" && (
+              {phase === "CONNECTING" && (
                 <div className="text-yellow-400 font-bold uppercase tracking-widest w-full">
                   <p className="mb-4">{`> Connecting...`}</p>
                   <p className="mb-4 text-xs">{`> Fetching the video...`}</p>
@@ -167,10 +151,10 @@ Status
                 </div>
               )}
 
-              {status === "POLLING" && (
+              {phase === "WORKING" && (
                 <div className="text-green-400 font-bold uppercase tracking-widest w-full">
                   <p className="mb-2">{`> Connected.`}</p>
-                  <p className="mb-4">{`> Downloading: ${jobId.slice(0, 8)}`}</p>
+                  <p className="mb-4">{`> Downloading: ${jobId?.slice(0, 8)}`}</p>
                   <div className="w-full h-6 flex gap-1">
                     <div className="h-full w-4 bg-green-400 animate-[ping_1s_infinite]"></div>
                     <div className="h-full w-4 bg-green-400 animate-[ping_1.2s_infinite]"></div>
@@ -179,31 +163,22 @@ Status
                 </div>
               )}
 
-              {status === "COMPLETED" && (
+              {phase === "DONE" && (
                 <div className="text-cyan-400 font-black uppercase tracking-widest w-full">
                   <p className="mb-2 text-2xl drop-shadow-[2px_2px_0_#00ffff]">{`> Done!`}</p>
                   <p className="mb-8 text-white">{`> Your file is ready.`}</p>
-                  <a
-                    href={downloadUrl}
-                    download
-                    className="block w-full text-center bg-orange-500 text-black font-black py-4 border-4 border-orange-500 hover:bg-black hover:text-orange-500 transition-colors shadow-[4px_4px_0_0_#ffff00]"
-                  >
+                  <Button href={downloadUrl} download color="orange" shadow="yellow">
                     [ DOWNLOAD ]
-                  </a>
+                  </Button>
                 </div>
               )}
 
-              {status === "ERROR" && (
-                <div className="text-red-500 font-black uppercase tracking-widest w-full">
-                  <p className="text-2xl mb-2 animate-pulse">{`> Something went wrong`}</p>
-                  <p className="text-white bg-red-500 p-2 inline-block">{`> Couldn't download this link.`}</p>
-                </div>
-              )}
+              {phase === "ERROR" && <UpsellError message={errorMsg} upsell={upsell} />}
             </div>
-          </div>
+          </TerminalPanel>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 };
 

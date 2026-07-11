@@ -1,204 +1,313 @@
 "use client";
-import axios from "axios";
-import { useState, useEffect } from "react";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import api, { apiError } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { useJobPolling } from "@/hooks/useJobPolling";
+import PageShell from "@/components/ui/PageShell";
+import TerminalPanel from "@/components/ui/TerminalPanel";
+import Button from "@/components/ui/Button";
+import { Field, Input } from "@/components/ui/Field";
+import FileDrop from "@/components/ui/FileDrop";
+import { UpsellError } from "@/components/ui/ToolBits";
+import MarkdownNotes from "@/components/MarkdownNotes";
 
-const AINotesMaker = () => {
+type Phase = "IDLE" | "WORKING" | "DONE" | "ERROR";
+type Mode = "url" | "file";
+
+const MAX_SUB_BYTES = 2 * 1024 * 1024;
+
+export default function NotesPage() {
+  const { user, usage, loading } = useAuth();
+
+  const [mode, setMode] = useState<Mode>("url");
   const [videoUrl, setVideoUrl] = useState("");
+  const [file, setFile] = useState<File | null>(null);
 
-  const [status, setStatus] = useState("IDLE");
-  const [jobId, setJobId] = useState("");
-  const [downloadUrl, setDownloadUrl] = useState("");
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const [phase, setPhase] = useState<Phase>("IDLE");
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [notes, setNotes] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [copied, setCopied] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const job = useJobPolling(phase === "WORKING" ? jobId : null);
+
+  useEffect(() => {
+    if (!job) return;
+    if (job.status === "COMPLETED") {
+      setNotes(job.notesMarkdown || "");
+      setPhase("DONE");
+    } else if (job.status === "FAILED") {
+      setErrorMsg(job.error || "Couldn't generate notes for this video.");
+      setPhase("ERROR");
+    }
+  }, [job]);
+
+  const busy = phase === "WORKING";
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!videoUrl) return alert("Please paste a link first.");
+    setErrorMsg("");
+    setNotes("");
 
-    setStatus("UPLOADING");
+    if (mode === "url" && !videoUrl) return alert("Please paste a link first.");
+    if (mode === "file" && !file) return alert("Please choose a subtitle file.");
+    if (mode === "file" && file && file.size > MAX_SUB_BYTES) {
+      setErrorMsg("Subtitle file must be under 2 MB.");
+      setPhase("ERROR");
+      return;
+    }
 
-    const payload = {
-      videoUrl: videoUrl,
-      targetFormat: "txt",
-      quality: "best",
-      webhookUrl: "http://localhost:3000/api/webhook",
-    };
+    setPhase("WORKING");
 
     try {
-      const res = await axios.post(`${apiUrl}/download-convert`, payload, {
-        headers: { "Content-Type": "application/json" },
-      });
+      let res;
+      if (mode === "url") {
+        res = await api.post("/notes", { videoUrl });
+      } else {
+        const fd = new FormData();
+        fd.append("subtitleFile", file as File);
+        res = await api.post("/notes", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
       setJobId(res.data.jobId);
-      setStatus("POLLING");
     } catch (error) {
-      console.error("Extraction failed:", error);
-      setStatus("ERROR");
+      setErrorMsg(apiError(error, "Couldn't start the notes job."));
+      setPhase("ERROR");
     }
   };
 
-  useEffect(() => {
-    let intervalId;
-    if (status === "POLLING" && jobId) {
-      intervalId = setInterval(async () => {
-        try {
-          const res = await axios.get(`${apiUrl}/status/${jobId}`);
-          if (res.data.status === "COMPLETED") {
-            clearInterval(intervalId);
-            setDownloadUrl(
-              `${res.data.path}?download=`,
-            );
-            setStatus("COMPLETED");
-          } else if (res.data.status === "FAILED") {
-            clearInterval(intervalId);
-            setStatus("ERROR");
-          }
-        } catch (error) {}
-      }, 2000);
-    }
-    return () => clearInterval(intervalId);
-  }, [status, jobId]);
+  const copyNotes = async () => {
+    await navigator.clipboard.writeText(notes);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
 
-  return (
-    <div className="min-h-screen bg-black text-white p-6 md:p-12 font-mono selection:bg-purple-500 selection:text-black">
-      {/* TOP NAV */}
-      <div className="max-w-5xl mx-auto mb-12">
-        <Link
-          href="/"
-          className="inline-block text-xl font-bold text-purple-400 hover:text-black hover:bg-purple-400 transition-colors uppercase tracking-widest border-2 border-purple-500 px-4 py-2 shadow-[4px_4px_0_0_#00ffff] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_#00ffff]"
-        >
-          &lt;&lt; BACK TO HOME
-        </Link>
-      </div>
+  const downloadNotes = () => {
+    const blob = new Blob([notes], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "study-notes.md";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
-      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {/* LEFT COLUMN: THE HARDWARE FORM */}
-        <div className="lg:col-span-2 flex flex-col gap-8">
-          <div className="border-l-8 border-purple-500 pl-4">
+  // --- Auth gate --------------------------------------------------------
+  if (loading) {
+    return (
+      <PageShell selection="purple" maxWidth="5xl">
+        <p className="text-purple-400 font-black uppercase tracking-widest animate-pulse">
+          {"> checking uplink..._"}
+        </p>
+      </PageShell>
+    );
+  }
+
+  if (!user) {
+    return (
+      <PageShell selection="purple" maxWidth="5xl">
+        <div className="max-w-xl mx-auto mt-6">
+          <div className="border-l-8 border-purple-500 pl-4 mb-8">
             <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white drop-shadow-[4px_4px_0_#9333ea] uppercase mb-2">
-              SUBTITLES TO TEXT
+              AI STUDY NOTES
             </h1>
             <p className="text-purple-400 font-bold tracking-widest text-sm uppercase">
-              // GHOST PROTOCOL — get a video's subtitles as clean text
+              // ACCOUNT REQUIRED
             </p>
           </div>
 
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col gap-8 bg-black border-4 border-purple-500 p-6 md:p-8 shadow-[10px_10px_0_0_#00ffff] relative"
-          >
-            {/* NETWORK INPUT */}
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-black text-cyan-400 uppercase tracking-widest">
-                  PASTE A LINK{" "}
-                  <span className="text-purple-500 animate-pulse">*</span>
-                </label>
-                <input
+          <div className="crt-terminal bg-black border-4 border-purple-500 p-8 shadow-[10px_10px_0_0_#00ffff] relative overflow-hidden">
+            <div className="relative z-20 flex flex-col items-start gap-6">
+              <p className="text-6xl">🔒</p>
+              <div>
+                <p className="text-white font-black uppercase tracking-widest text-xl mb-3">
+                  {"> This tool needs a free account."}
+                </p>
+                <p className="text-white/60 font-bold text-sm normal-case tracking-normal leading-relaxed">
+                  AI Study Notes runs your transcript through Gemini to build
+                  clean, structured notes. It&apos;s free — creating an account
+                  just unlocks it (5 notes a day), along with 100 MB uploads and
+                  20 jobs a day.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4 w-full">
+                <Button color="purple" shadow="cyan" href="/signup">
+                  CREATE FREE ACCOUNT
+                </Button>
+                <Button color="cyan" shadow="purple" variant="outline" href="/login">
+                  LOG IN
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-center text-neutral-500 font-bold uppercase tracking-widest text-xs mt-8">
+            {"// JUST NEED THE RAW SUBTITLES? "}
+            <Link href="/forge" className="text-cyan-400 hover:text-cyan-300">
+              USE THE FORGE
+            </Link>
+          </p>
+        </div>
+      </PageShell>
+    );
+  }
+
+  // --- Authenticated tool ----------------------------------------------
+  const notesLeft =
+    usage && typeof usage.notesLimit === "number"
+      ? Math.max(0, usage.notesLimit - usage.notesUsed)
+      : null;
+
+  return (
+    <PageShell selection="purple" maxWidth="6xl">
+      <div className="flex flex-col gap-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+          <div className="border-l-8 border-purple-500 pl-4">
+            <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white drop-shadow-[4px_4px_0_#9333ea] uppercase mb-2">
+              AI STUDY NOTES
+            </h1>
+            <p className="text-purple-400 font-bold tracking-widest text-sm uppercase">
+              // GEMINI TURNS TRANSCRIPTS INTO NOTES
+            </p>
+          </div>
+          {notesLeft !== null && (
+            <div className="border-4 border-purple-500 bg-purple-500/10 px-4 py-3 shadow-[4px_4px_0_0_#9333ea]">
+              <p className="text-purple-400 font-black uppercase tracking-widest text-xs">
+                {`NOTES LEFT TODAY: ${notesLeft} / ${usage!.notesLimit}`}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* INPUT CARD */}
+        <div className="bg-black border-4 border-purple-500 p-6 md:p-8 shadow-[10px_10px_0_0_#00ffff]">
+          {/* MODE TABS */}
+          <div className="flex gap-0 mb-8 border-4 border-purple-500/40 w-full md:w-fit">
+            {(["url", "file"] as Mode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                disabled={busy}
+                className={`flex-1 md:flex-none px-6 py-3 font-black uppercase tracking-widest text-sm transition-colors disabled:opacity-50 ${
+                  mode === m
+                    ? "bg-purple-600 text-white"
+                    : "bg-black text-purple-400 hover:bg-purple-500/10"
+                }`}
+              >
+                {m === "url" ? "FROM LINK" : "FROM FILE"}
+              </button>
+            ))}
+          </div>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+            {mode === "url" ? (
+              <Field label="PASTE A VIDEO LINK" labelColor="cyan" required requiredColor="purple">
+                <Input
                   type="url"
                   placeholder="HTTPS://..."
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
-                  disabled={status === "UPLOADING" || status === "POLLING"}
-                  className="bg-black border-4 border-cyan-400 text-cyan-400 font-bold p-4 focus:outline-none focus:border-purple-500 focus:text-purple-400 transition-colors disabled:opacity-50 placeholder-cyan-900 rounded-none w-full"
+                  disabled={busy}
+                  color="cyan"
+                  focus="purple"
+                />
+              </Field>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-1">
+                  <span className="text-sm font-black uppercase tracking-widest text-cyan-400">
+                    UPLOAD SUBTITLES — .SRT / .VTT / .TXT
+                  </span>
+                  <span className="text-purple-500 animate-pulse">*</span>
+                </label>
+                <FileDrop
+                  file={file}
+                  onFile={setFile}
+                  accept=".srt,.vtt,.txt"
+                  disabled={busy}
+                  color="purple"
+                  shadow="cyan"
+                  hint="MAX 2 MB"
                 />
               </div>
-            </div>
+            )}
 
-            <div className="border-l-4 border-green-500 bg-green-500/10 p-4 flex flex-col gap-2">
-              <span className="text-green-500 font-black tracking-widest uppercase text-sm">
-                &gt; HOW THIS WORKS:
-              </span>
-              <p className="text-xs font-bold text-green-400 uppercase leading-relaxed tracking-wider">
-                This grabs the video's subtitles without downloading the video
-                itself. Timestamps and repeated lines are removed, and you get a
-                clean .TXT file — perfect for notes or pasting into AI tools.
+            <div className="border-l-4 border-purple-500 bg-purple-500/10 p-4">
+              <p className="text-xs font-bold text-purple-300 uppercase leading-relaxed tracking-wider">
+                We pull the transcript, then Gemini writes a title, TL;DR, key
+                points, sectioned notes (with timestamps when available), and a
+                glossary. Output is markdown you can copy or download.
               </p>
             </div>
 
-            <button
-              type="submit"
-              disabled={status === "UPLOADING" || status === "POLLING"}
-              className="mt-2 w-full bg-purple-600 text-white font-black text-xl tracking-[0.3em] uppercase py-5 border-4 border-purple-600 shadow-[8px_8px_0_0_#00ffff] hover:bg-purple-500 hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[4px_4px_0_0_#00ffff] active:translate-x-[8px] active:translate-y-[8px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {status === "UPLOADING"
-                ? "STARTING..."
-                : status === "POLLING"
-                  ? "GETTING TEXT..."
-                  : "GET TEXT"}
-            </button>
+            <Button type="submit" color="purple" shadow="cyan" disabled={busy || notesLeft === 0}>
+              {busy ? "WRITING NOTES..." : notesLeft === 0 ? "DAILY LIMIT REACHED" : "GENERATE NOTES"}
+            </Button>
           </form>
         </div>
 
-        {/* RIGHT COLUMN: STATUS TERMINAL */}
-        <div className="flex flex-col gap-6">
-          <div className="crt-terminal bg-black border-4 border-cyan-400 p-6 h-full min-h-[400px] flex flex-col relative overflow-hidden shadow-[8px_8px_0_0_#9333ea]">
-            <div className="flex justify-between items-center border-b-4 border-cyan-400/50 pb-4 mb-6 relative z-20">
-              <h3 className="text-lg font-black text-cyan-400 uppercase tracking-widest">
-Status
-              </h3>
-              <div className="flex gap-2">
-                <div className="w-3 h-3 bg-purple-500 border border-purple-300"></div>
-                <div className="w-3 h-3 bg-green-500 border border-green-300"></div>
-                <div className="w-3 h-3 bg-cyan-400 border border-cyan-200"></div>
+        {/* OUTPUT */}
+        <TerminalPanel
+          title="NOTES.MD"
+          color="cyan"
+          shadow="purple"
+          shadowSize={8}
+          dots={["purple", "green", "cyan"]}
+        >
+          {phase === "IDLE" && (
+            <div className="text-cyan-400 font-bold uppercase tracking-widest py-8">
+              <p className="mb-2">{`> Ready`}</p>
+              <p className="animate-pulse">{`> Waiting for a video or file..._`}</p>
+            </div>
+          )}
+
+          {phase === "WORKING" && (
+            <div className="text-purple-400 font-bold uppercase tracking-widest w-full py-8">
+              <p className="mb-2">{`> Reading the transcript...`}</p>
+              <p className="mb-4 text-xs">{`> Gemini is writing your notes: ${jobId?.slice(0, 8)}`}</p>
+              <div className="w-full h-8 flex gap-2">
+                <div className="h-full w-full bg-purple-500 animate-[pulse_0.5s_infinite]"></div>
+                <div className="h-full w-full bg-cyan-400 animate-[pulse_0.7s_infinite]"></div>
+                <div className="h-full w-full bg-green-500 animate-[pulse_0.9s_infinite]"></div>
               </div>
             </div>
+          )}
 
-            <div className="flex-grow flex flex-col items-start justify-center text-left relative z-20 w-full">
-              {status === "IDLE" && (
-                <div className="text-cyan-400 font-bold uppercase tracking-widest">
-                  <p className="mb-2">{`> Ready`}</p>
-                  <p className="animate-pulse">{`> Waiting for a link..._`}</p>
-                </div>
-              )}
-
-              {status === "UPLOADING" && (
-                <div className="text-purple-400 font-bold uppercase tracking-widest w-full">
-                  <p className="mb-4">{`> Connecting...`}</p>
-                  <p className="mb-4 text-xs">{`> Finding subtitles...`}</p>
-                  <div className="w-full h-4 border-2 border-purple-400 p-0.5">
-                    <div className="h-full bg-purple-500 w-1/4 animate-pulse"></div>
-                  </div>
-                </div>
-              )}
-
-              {status === "POLLING" && (
-                <div className="text-green-500 font-bold uppercase tracking-widest w-full">
-                  <p className="mb-2">{`> Subtitles found.`}</p>
-                  <p className="mb-4 text-xs">{`> Cleaning text: ${jobId.slice(0, 8)}`}</p>
-                  <div className="w-full h-8 flex gap-2">
-                    <div className="h-full w-full bg-green-500 animate-[pulse_0.4s_infinite]"></div>
-                    <div className="h-full w-full bg-cyan-400 animate-[pulse_0.6s_infinite]"></div>
-                    <div className="h-full w-full bg-purple-500 animate-[pulse_0.8s_infinite]"></div>
-                  </div>
-                </div>
-              )}
-
-              {status === "COMPLETED" && (
-                <div className="text-purple-400 font-black uppercase tracking-widest w-full">
-                  <p className="mb-2 text-2xl drop-shadow-[2px_2px_0_#00ffff]">{`> Done!`}</p>
-                  <p className="mb-8 text-white">{`> Your text file is ready.`}</p>
-                  <a
-                    href={downloadUrl}
-                    download
-                    className="block w-full text-center bg-cyan-400 text-black font-black py-4 border-4 border-cyan-400 hover:bg-black hover:text-cyan-400 transition-colors shadow-[4px_4px_0_0_#9333ea]"
-                  >
-                    [ DOWNLOAD TEXT ]
-                  </a>
-                </div>
-              )}
-
-              {status === "ERROR" && (
-                <div className="text-red-500 font-black uppercase tracking-widest w-full">
-                  <p className="text-2xl mb-2 animate-pulse">{`> No subtitles found`}</p>
-                  <p className="text-white bg-red-500 p-2 inline-block">{`> This video has no subtitles to extract.`}</p>
-                </div>
-              )}
+          {phase === "ERROR" && (
+            <div className="py-8">
+              <UpsellError message={errorMsg} />
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+          )}
 
-export default AINotesMaker;
+          {phase === "DONE" && (
+            <div className="w-full">
+              <div className="flex flex-wrap gap-3 mb-6 pb-6 border-b-4 border-cyan-400/30">
+                <button
+                  type="button"
+                  onClick={copyNotes}
+                  className="bg-green-500 text-black font-black uppercase tracking-widest text-xs px-4 py-2 border-2 border-green-500 shadow-[4px_4px_0_0_#00ffff] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_#00ffff] transition-all"
+                >
+                  {copied ? "COPIED!" : "[ COPY MARKDOWN ]"}
+                </button>
+                <button
+                  type="button"
+                  onClick={downloadNotes}
+                  className="bg-cyan-400 text-black font-black uppercase tracking-widest text-xs px-4 py-2 border-2 border-cyan-400 shadow-[4px_4px_0_0_#9333ea] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_#9333ea] transition-all"
+                >
+                  [ DOWNLOAD .MD ]
+                </button>
+              </div>
+              <div className="max-h-[60vh] overflow-y-auto pr-2">
+                <MarkdownNotes markdown={notes} />
+              </div>
+            </div>
+          )}
+        </TerminalPanel>
+      </div>
+    </PageShell>
+  );
+}
