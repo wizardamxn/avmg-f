@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Traces the actual import graph and emits a self-contained server.js plus
+  // only the node_modules it really needs. Without this the runtime image has
+  // to carry the entire dependency tree (~500MB vs ~150MB).
+  output: "standalone",
   typescript: {
     // !! WARN !!
     // Dangerously allow production builds to successfully complete even if
