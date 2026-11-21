@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "AVMG // Download. Convert. Study.",
   description:
-    "Download videos, convert media between formats, and turn any video's subtitles into AI-powered study notes — all in one brutalist toolkit.",
+    "Download videos, convert formats, compress to a size, clean up audio, grab frames, edit and pull subtitles — all in one brutalist toolkit.",
 };
 export default function RootLayout({
   children,

@@ -57,7 +57,11 @@ const MediaConverter = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return alert("Please choose a file first.");
+    if (!file) {
+      setErrorMsg("Please choose a file first.");
+      setUpsell(false);
+      return setPhase("ERROR");
+    }
 
     setPhase("UPLOADING");
     setUploadPct(0);

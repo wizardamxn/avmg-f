@@ -47,15 +47,52 @@ const tools: Tool[] = [
       "border-cyan-400 text-cyan-400 shadow-[8px_8px_0_0_#00ffff] hover:bg-cyan-400 hover:text-black",
   },
   {
-    id: "notes",
-    title: "AI STUDY NOTES",
-    description:
-      "> Paste a link or drop a subtitle file and get structured, AI-written study notes — TL;DR, key points, sections, and a glossary.",
-    icon: "[_X]",
-    path: "/notes",
-    theme:
-      "border-purple-500 text-purple-500 shadow-[8px_8px_0_0_#9333ea] hover:bg-purple-500 hover:text-black",
-    account: true,
+    id: "compress",
+    title: "COMPRESS TO SIZE",
+    description: "> Shrink a video to fit an upload limit: 8 MB for Discord, 16 MB for WhatsApp, 25 MB for email, or any size you choose.",
+    icon: "[<>]",
+    path: "/compress",
+    theme: "border-orange-500 text-orange-500 shadow-[8px_8px_0_0_#ff8800] hover:bg-orange-500 hover:text-black",
+  },
+  {
+    id: "audio",
+    title: "AUDIO CLEANUP",
+    description: "> Even out a recording's volume, cut long silences, or speed it up. Made for lectures, podcasts and voice notes.",
+    icon: "[~~]",
+    path: "/audio",
+    theme: "border-purple-500 text-purple-500 shadow-[8px_8px_0_0_#9333ea] hover:bg-purple-500 hover:text-black",
+  },
+  {
+    id: "frames",
+    title: "FRAME GRABS",
+    description: "> Save a still from any moment of a video, or a contact sheet: a grid of frames spread across the whole video.",
+    icon: "[##]",
+    path: "/frames",
+    theme: "border-yellow-400 text-yellow-400 shadow-[8px_8px_0_0_#ffff00] hover:bg-yellow-400 hover:text-black",
+  },
+  {
+    id: "edit",
+    title: "QUICK EDITS",
+    description: "> Fix a sideways phone video, mirror it, mute it, or change its speed.",
+    icon: "[/\]",
+    path: "/edit",
+    theme: "border-green-500 text-green-500 shadow-[8px_8px_0_0_#39ff14] hover:bg-green-500 hover:text-black",
+  },
+  {
+    id: "subtitles",
+    title: "SUBTITLES",
+    description: "> Paste a link and get its subtitles as .srt or .vtt, or a clean .txt transcript. Only the text is fetched, never the video.",
+    icon: "[Tt]",
+    path: "/subtitles",
+    theme: "border-cyan-400 text-cyan-400 shadow-[8px_8px_0_0_#00ffff] hover:bg-cyan-400 hover:text-black",
+  },
+  {
+    id: "inspect",
+    title: "MEDIA INSPECTOR",
+    description: "> Drop any audio, video or image file to see its codec, resolution, length and bitrate. Instant, and it doesn't use your daily jobs.",
+    icon: "[??]",
+    path: "/inspect",
+    theme: "border-white text-white shadow-[8px_8px_0_0_#ffffff] hover:bg-white hover:text-black",
   },
 ];
 
@@ -96,7 +133,7 @@ export default function ToolsHub() {
             // PICK YOUR WEAPON
           </p>
           <p className="text-white/70 font-bold text-xs md:text-sm mt-3 normal-case tracking-normal">
-            Download, convert, and turn videos into notes — all in one place.
+            Download, convert, shrink and edit — all in one place.
             {!user && " Signed out: 5 MB / 3 jobs a day."}
           </p>
         </div>
@@ -111,7 +148,7 @@ export default function ToolsHub() {
       </div>
 
       {/* TOOLS GRID */}
-      <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-10">
+      <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
         {tools.map((tool) => (
           <Link href={tool.path} key={tool.id}>
             <div

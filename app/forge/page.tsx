@@ -52,7 +52,11 @@ const TheForge = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!videoUrl) return alert("Please paste a link first.");
+    if (!videoUrl) {
+      setErrorMsg("Please paste a link first.");
+      setUpsell(false);
+      return setPhase("ERROR");
+    }
 
     setPhase("CONNECTING");
     setErrorMsg("");

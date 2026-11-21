@@ -12,7 +12,6 @@ export type Job = {
   path?: string | null;
   fileName?: string | null;
   targetFormat?: string | null;
-  notesMarkdown?: string | null;
   size?: number | null;
   error?: string | null;
   createdAt?: string;

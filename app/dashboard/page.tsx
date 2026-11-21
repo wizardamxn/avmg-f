@@ -7,7 +7,6 @@ import type { Job } from "@/hooks/useJobPolling";
 import PageShell from "@/components/ui/PageShell";
 import Button from "@/components/ui/Button";
 import StatusBadge from "@/components/ui/StatusBadge";
-import MarkdownNotes from "@/components/MarkdownNotes";
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return "—";
@@ -29,7 +28,6 @@ export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewing, setViewing] = useState<Job | null>(null);
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -68,7 +66,7 @@ export default function Dashboard() {
             </p>
             <p className="text-white/60 font-bold text-sm normal-case tracking-normal leading-relaxed mb-8">
               Create a free account (or log in) to keep a running history of your
-              downloads, conversions, and AI notes for 24 hours.
+              downloads, conversions and edits for 24 hours.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button color="pink" shadow="green" href="/signup">
@@ -92,7 +90,7 @@ export default function Dashboard() {
             HISTORY
           </h1>
           <p className="text-gray-400 font-bold tracking-widest text-sm uppercase">
-            // Every download, conversion, and note you&apos;ve run
+            // Every job you&apos;ve run
           </p>
         </div>
 
@@ -142,7 +140,6 @@ export default function Dashboard() {
                 </tr>
               ) : (
                 jobs.map((job) => {
-                  const isNotes = job.jobType === "job-ai-notes";
                   return (
                     <tr key={job.id} className="hover:bg-neutral-900 transition-colors group">
                       <td className="px-6 py-6 font-mono text-sm font-bold text-gray-400 group-hover:text-white transition-colors">
@@ -164,14 +161,7 @@ export default function Dashboard() {
                         {formatDate(job.createdAt)}
                       </td>
                       <td className="px-6 py-6 text-right">
-                        {job.status === "COMPLETED" && isNotes && job.notesMarkdown ? (
-                          <button
-                            onClick={() => setViewing(job)}
-                            className="inline-block bg-purple-600 text-white border-4 border-purple-600 px-4 py-2 font-black tracking-widest uppercase hover:bg-black hover:text-purple-400 transition-colors shadow-[4px_4px_0_0_#00ffff]"
-                          >
-                            [ VIEW ]
-                          </button>
-                        ) : job.status === "COMPLETED" && job.path ? (
+                        {job.status === "COMPLETED" && job.path ? (
                           <a
                             href={`${job.path}?download=`}
                             download
@@ -198,34 +188,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* NOTES MODAL */}
-      {viewing && (
-        <div
-          className="fixed inset-0 z-50 bg-black/80 flex items-start md:items-center justify-center p-4 md:p-10 overflow-y-auto"
-          onClick={() => setViewing(null)}
-        >
-          <div
-            className="w-full max-w-3xl bg-black border-4 border-purple-500 shadow-[12px_12px_0_0_#00ffff] my-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center border-b-4 border-purple-500/50 p-5 sticky top-0 bg-black">
-              <h3 className="text-lg font-black text-purple-400 uppercase tracking-widest">
-                STUDY NOTES // {viewing.id.split("-")[0]}
-              </h3>
-              <button
-                onClick={() => setViewing(null)}
-                className="text-white font-black text-xl px-3 hover:text-red-500 transition-colors"
-                aria-label="Close"
-              >
-                [X]
-              </button>
-            </div>
-            <div className="p-6 md:p-8 max-h-[75vh] overflow-y-auto">
-              <MarkdownNotes markdown={viewing.notesMarkdown || ""} />
-            </div>
-          </div>
-        </div>
-      )}
     </PageShell>
   );
 }

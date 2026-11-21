@@ -13,7 +13,6 @@ import { Field, Input } from "@/components/ui/Field";
 const PERKS = [
   "100 MB uploads (guests get 5 MB)",
   "20 jobs / day (guests get 3)",
-  "AI STUDY NOTES unlocked — 5 / day",
   "Files kept 24h instead of 1h",
   "No credit card. Ever.",
 ];

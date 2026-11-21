@@ -12,9 +12,9 @@ const LOG_LINES = [
   "> yt-dlp: fetching best audio ... 100%",
   "> ffmpeg: transcode -> mp3 320k . done",
   "> upload: cloud link ready ...... OK",
-  "$ avmg notes https://youtu.be/lecture --ai",
-  "> subtitles scraped ............. 4,812 words",
-  "> gemini: writing study notes ... done",
+  "$ avmg compress clip.mp4 --to 8mb",
+  "> bitrate fitted ................ 1,034 kbps",
+  "> ffmpeg: re-encode -> 7.8 MB ... done",
   "> COMPLETE. grab your files.",
 ];
 
@@ -41,11 +41,46 @@ const TOOLS = [
     box: "border-cyan-400 text-cyan-400 shadow-[8px_8px_0_0_#00ffff] hover:bg-cyan-400",
   },
   {
-    title: "AI STUDY NOTES",
-    blurb: "Any video's subtitles → structured, AI-written notes.",
-    icon: "[_X]",
-    path: "/notes",
+    title: "COMPRESS TO SIZE",
+    blurb: "Fit a video under 8, 16 or 25 MB for Discord, WhatsApp, email.",
+    icon: "[<>]",
+    path: "/compress",
+    box: "border-orange-500 text-orange-500 shadow-[8px_8px_0_0_#ff8800] hover:bg-orange-500",
+  },
+  {
+    title: "AUDIO CLEANUP",
+    blurb: "Even out volume, cut silences, speed up lectures.",
+    icon: "[~~]",
+    path: "/audio",
     box: "border-purple-500 text-purple-500 shadow-[8px_8px_0_0_#9333ea] hover:bg-purple-500",
+  },
+  {
+    title: "FRAME GRABS",
+    blurb: "A still at any timestamp, or a contact-sheet grid.",
+    icon: "[##]",
+    path: "/frames",
+    box: "border-yellow-400 text-yellow-400 shadow-[8px_8px_0_0_#ffff00] hover:bg-yellow-400",
+  },
+  {
+    title: "QUICK EDITS",
+    blurb: "Rotate, mirror, mute or speed up a video.",
+    icon: "[/\\]",
+    path: "/edit",
+    box: "border-green-500 text-green-500 shadow-[8px_8px_0_0_#39ff14] hover:bg-green-500",
+  },
+  {
+    title: "SUBTITLES",
+    blurb: "Grab a video's .srt, .vtt or transcript without downloading it.",
+    icon: "[Tt]",
+    path: "/subtitles",
+    box: "border-cyan-400 text-cyan-400 shadow-[8px_8px_0_0_#00ffff] hover:bg-cyan-400",
+  },
+  {
+    title: "MEDIA INSPECTOR",
+    blurb: "Codec, resolution, length and bitrate of any file, instantly.",
+    icon: "[??]",
+    path: "/inspect",
+    box: "border-white text-white shadow-[8px_8px_0_0_#ffffff] hover:bg-white",
   },
 ];
 
@@ -60,14 +95,14 @@ const STEPS = [
   {
     n: "02",
     title: "THE WORKER COOKS",
-    body: "Your job hits the queue. yt-dlp rips, ffmpeg transcodes, Gemini writes. You watch the terminal.",
+    body: "Your job hits the queue. yt-dlp rips, ffmpeg does the work. You watch the terminal.",
     color: "text-green-500",
     border: "border-green-500",
   },
   {
     n: "03",
     title: "GRAB YOUR FILE",
-    body: "Download the result or copy your notes as markdown. Accounts keep history for 24 hours.",
+    body: "Download the result. Accounts keep files and history for 24 hours.",
     color: "text-cyan-400",
     border: "border-cyan-400",
   },
@@ -76,11 +111,7 @@ const STEPS = [
 const FAQ = [
   {
     q: "Is it really free?",
-    a: "Yes. Guests use every tool with small limits (5 MB, 3 jobs/day). A free account bumps you to 100 MB, 20 jobs/day, and unlocks AI Study Notes. No credit card, no paid tier — signing up IS the upgrade.",
-  },
-  {
-    q: "What's the AI Study Notes tool?",
-    a: "Paste a video link (or upload an .srt/.vtt/.txt subtitle file) and we turn the transcript into clean, structured markdown notes — TL;DR, key points, sectioned notes with timestamps, and a glossary. Powered by Google Gemini.",
+    a: "Yes. Guests use every tool with small limits (5 MB, 3 jobs/day). A free account bumps you to 100 MB, 20 jobs/day and keeps your files for 24 hours. No credit card, no paid tier — signing up IS the upgrade.",
   },
   {
     q: "Do you keep my files?",
@@ -118,12 +149,12 @@ export default function Landing() {
             <br />
             <span className="drop-shadow-[6px_6px_0_#00ffff]">CONVERT.</span>
             <br />
-            <span className="drop-shadow-[6px_6px_0_#9333ea]">STUDY.</span>
+            <span className="drop-shadow-[6px_6px_0_#9333ea]">EDIT.</span>
           </h1>
           <p className="text-white/70 font-bold text-sm md:text-base normal-case tracking-normal max-w-md mb-10 leading-relaxed">
             {"// "}One brutalist toolkit to rip videos, convert any format, and
-            turn lectures into AI study notes. No fluff. No dashboards you don&apos;t
-            need. Just the tools.
+            shrink, clean up and edit video and audio. No fluff. No dashboards
+            you don&apos;t need. Just the tools.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-5 max-w-md">
@@ -187,7 +218,7 @@ export default function Landing() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {TOOLS.map((tool) => (
             <Link href={tool.path} key={tool.title}>
               <div
@@ -265,10 +296,9 @@ export default function Landing() {
               // NO ACCOUNT
             </p>
             <ul className="flex flex-col gap-3 mb-8">
-              <TierRow ok>Use every non-AI tool</TierRow>
+              <TierRow ok>Use every tool</TierRow>
               <TierRow ok>5 MB max upload</TierRow>
               <TierRow ok>3 jobs per day</TierRow>
-              <TierRow no>AI Study Notes locked</TierRow>
               <TierRow no>Files kept 1 hour</TierRow>
             </ul>
             <Button color="white" shadow="cyan" variant="outline" href="/tools">
@@ -291,7 +321,6 @@ export default function Landing() {
               <TierRow ok>Everything in Guest, plus:</TierRow>
               <TierRow ok>100 MB max upload</TierRow>
               <TierRow ok>20 jobs per day</TierRow>
-              <TierRow ok>AI Study Notes — 5 / day</TierRow>
               <TierRow ok>Files kept 24 hours + history</TierRow>
             </ul>
             <Button color="green" shadow="pink" href="/signup">

@@ -14,8 +14,6 @@ export type User = { id: string; email: string; name?: string | null };
 export type Usage = {
   jobsUsed: number;
   jobsLimit: number;
-  notesUsed: number;
-  notesLimit: number;
 } | null;
 
 type AuthContextValue = {
