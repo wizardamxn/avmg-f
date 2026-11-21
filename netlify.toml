@@ -1,0 +1,9 @@
+# Frontend on Netlify (avmg.amanahmad.xyz); API runs on the home server at avmg-api.amanahmad.xyz.
+[build]
+  command = "pnpm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  # NEXT_PUBLIC_* is baked in at build time. Must end in /api.
+  NEXT_PUBLIC_API_URL = "https://avmg-api.amanahmad.xyz/api"

@@ -24,13 +24,14 @@ export type Job = {
 // was copy-pasted into every tool page.
 export function useJobPolling(jobId: string | null, intervalMs = 2500) {
   const [job, setJob] = useState<Job | null>(null);
+  // Tracks which jobId `job` actually belongs to, so a freshly-started job
+  // doesn't briefly show the previous job's stale data. State, not a ref —
+  // reading a ref during render isn't safe, reading state is.
+  const [jobJobId, setJobJobId] = useState<string | null>(null);
   const startedAt = useRef(0);
 
   useEffect(() => {
-    if (!jobId) {
-      setJob(null);
-      return;
-    }
+    if (!jobId) return;
 
     startedAt.current = Date.now();
     let active = true;
@@ -39,6 +40,7 @@ export function useJobPolling(jobId: string | null, intervalMs = 2500) {
       try {
         const res = await api.get(`/status/${jobId}`);
         if (!active) return;
+        setJobJobId(jobId);
         setJob(res.data);
         if (res.data.status === "COMPLETED" || res.data.status === "FAILED") {
           clearInterval(id);
@@ -58,5 +60,5 @@ export function useJobPolling(jobId: string | null, intervalMs = 2500) {
     };
   }, [jobId, intervalMs]);
 
-  return job;
+  return jobId && jobJobId === jobId ? job : null;
 }

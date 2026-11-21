@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import api, { apiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -27,29 +27,24 @@ export default function NotesPage() {
 
   const [phase, setPhase] = useState<Phase>("IDLE");
   const [jobId, setJobId] = useState<string | null>(null);
-  const [notes, setNotes] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [copied, setCopied] = useState(false);
 
   const job = useJobPolling(phase === "WORKING" ? jobId : null);
 
-  useEffect(() => {
-    if (!job) return;
-    if (job.status === "COMPLETED") {
-      setNotes(job.notesMarkdown || "");
-      setPhase("DONE");
-    } else if (job.status === "FAILED") {
-      setErrorMsg(job.error || "Couldn't generate notes for this video.");
-      setPhase("ERROR");
-    }
-  }, [job]);
+  // Derived from `job` during render instead of synced via an effect —
+  // job completion/failure shows up immediately, no extra render pass.
+  const displayPhase: Phase =
+    job?.status === "COMPLETED" ? "DONE" : job?.status === "FAILED" ? "ERROR" : phase;
+  const notes = job?.status === "COMPLETED" ? job.notesMarkdown || "" : "";
+  const displayErrorMsg =
+    job?.status === "FAILED" ? job.error || "Couldn't generate notes for this video." : errorMsg;
 
-  const busy = phase === "WORKING";
+  const busy = displayPhase === "WORKING";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
-    setNotes("");
 
     if (mode === "url" && !videoUrl) return alert("Please paste a link first.");
     if (mode === "file" && !file) return alert("Please choose a subtitle file.");
@@ -258,14 +253,14 @@ export default function NotesPage() {
           shadowSize={8}
           dots={["purple", "green", "cyan"]}
         >
-          {phase === "IDLE" && (
+          {displayPhase === "IDLE" && (
             <div className="text-cyan-400 font-bold uppercase tracking-widest py-8">
               <p className="mb-2">{`> Ready`}</p>
               <p className="animate-pulse">{`> Waiting for a video or file..._`}</p>
             </div>
           )}
 
-          {phase === "WORKING" && (
+          {displayPhase === "WORKING" && (
             <div className="text-purple-400 font-bold uppercase tracking-widest w-full py-8">
               <p className="mb-2">{`> Reading the transcript...`}</p>
               <p className="mb-4 text-xs">{`> Gemini is writing your notes: ${jobId?.slice(0, 8)}`}</p>
@@ -277,13 +272,13 @@ export default function NotesPage() {
             </div>
           )}
 
-          {phase === "ERROR" && (
+          {displayPhase === "ERROR" && (
             <div className="py-8">
-              <UpsellError message={errorMsg} />
+              <UpsellError message={displayErrorMsg} />
             </div>
           )}
 
-          {phase === "DONE" && (
+          {displayPhase === "DONE" && (
             <div className="w-full">
               <div className="flex flex-wrap gap-3 mb-6 pb-6 border-b-4 border-cyan-400/30">
                 <button

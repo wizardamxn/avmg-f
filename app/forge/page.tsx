@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import api, { apiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useJobPolling } from "@/hooks/useJobPolling";
@@ -35,25 +35,20 @@ const TheForge = () => {
 
   const [phase, setPhase] = useState<Phase>("IDLE");
   const [jobId, setJobId] = useState<string | null>(null);
-  const [downloadUrl, setDownloadUrl] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [upsell, setUpsell] = useState(false);
 
   const job = useJobPolling(phase === "WORKING" ? jobId : null);
 
-  useEffect(() => {
-    if (!job) return;
-    if (job.status === "COMPLETED") {
-      setDownloadUrl(`${job.path}?download=`);
-      setPhase("DONE");
-    } else if (job.status === "FAILED") {
-      setErrorMsg(job.error || "Something went wrong. Please try again.");
-      setUpsell(false);
-      setPhase("ERROR");
-    }
-  }, [job]);
+  // Derived from `job` during render instead of synced via an effect —
+  // job completion/failure shows up immediately, no extra render pass.
+  const displayPhase: Phase =
+    job?.status === "COMPLETED" ? "DONE" : job?.status === "FAILED" ? "ERROR" : phase;
+  const downloadUrl = job?.status === "COMPLETED" ? `${job.path}?download=` : "";
+  const displayErrorMsg =
+    job?.status === "FAILED" ? job.error || "Something went wrong. Please try again." : errorMsg;
 
-  const busy = phase === "CONNECTING" || phase === "WORKING";
+  const busy = displayPhase === "CONNECTING" || displayPhase === "WORKING";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,9 +136,9 @@ const TheForge = () => {
             </div>
 
             <Button type="submit" color="cyan" shadow="pink" disabled={busy}>
-              {phase === "CONNECTING"
+              {displayPhase === "CONNECTING"
                 ? "STARTING..."
-                : phase === "WORKING"
+                : displayPhase === "WORKING"
                   ? "WORKING..."
                   : "DOWNLOAD + CONVERT"}
             </Button>
@@ -160,14 +155,14 @@ const TheForge = () => {
             className="h-full min-h-[400px]"
           >
             <div className="flex-grow flex flex-col items-start justify-center text-left w-full">
-              {phase === "IDLE" && (
+              {displayPhase === "IDLE" && (
                 <div className="text-purple-400 font-bold uppercase tracking-widest">
                   <p className="mb-2">{`> Ready`}</p>
                   <p className="animate-pulse">{`> Waiting for a link..._`}</p>
                 </div>
               )}
 
-              {phase === "CONNECTING" && (
+              {displayPhase === "CONNECTING" && (
                 <div className="text-cyan-400 font-bold uppercase tracking-widest w-full">
                   <p className="mb-4">{`> Connecting...`}</p>
                   <p className="mb-4 text-xs">{`> Fetching the video...`}</p>
@@ -177,7 +172,7 @@ const TheForge = () => {
                 </div>
               )}
 
-              {phase === "WORKING" && (
+              {displayPhase === "WORKING" && (
                 <div className="text-pink-500 font-bold uppercase tracking-widest w-full">
                   <p className="mb-2">{`> Converting...`}</p>
                   <p className="mb-4 text-xs">{`> Job: ${jobId?.slice(0, 8)}`}</p>
@@ -189,7 +184,7 @@ const TheForge = () => {
                 </div>
               )}
 
-              {phase === "DONE" && (
+              {displayPhase === "DONE" && (
                 <div className="text-cyan-400 font-black uppercase tracking-widest w-full">
                   <p className="mb-2 text-2xl drop-shadow-[2px_2px_0_#ff00ff]">{`> Done!`}</p>
                   <p className="mb-8 text-white">{`> Your file is ready.`}</p>
@@ -199,7 +194,7 @@ const TheForge = () => {
                 </div>
               )}
 
-              {phase === "ERROR" && <UpsellError message={errorMsg} upsell={upsell} />}
+              {displayPhase === "ERROR" && <UpsellError message={displayErrorMsg} upsell={upsell} />}
             </div>
           </TerminalPanel>
         </div>

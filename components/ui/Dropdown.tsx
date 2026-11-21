@@ -35,6 +35,11 @@ export default function Dropdown({
 
   useEffect(() => {
     if (!open) return;
+    // Resets keyboard-nav highlight to the current value whenever the
+    // dropdown opens (from the trigger click, ArrowDown, or Enter/Space) —
+    // a legitimate "reset local state when opening" effect, not state
+    // derived from props/state that could just be computed during render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHighlight(Math.max(0, options.findIndex((o) => o.value === value)));
     const onDoc = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);

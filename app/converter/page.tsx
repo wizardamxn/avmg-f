@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import api, { apiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useJobPolling } from "@/hooks/useJobPolling";
@@ -40,25 +40,20 @@ const MediaConverter = () => {
   const [phase, setPhase] = useState<Phase>("IDLE");
   const [uploadPct, setUploadPct] = useState(0);
   const [jobId, setJobId] = useState<string | null>(null);
-  const [downloadUrl, setDownloadUrl] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [upsell, setUpsell] = useState(false);
 
   const job = useJobPolling(phase === "WORKING" ? jobId : null);
 
-  useEffect(() => {
-    if (!job) return;
-    if (job.status === "COMPLETED") {
-      setDownloadUrl(`${job.path}?download=`);
-      setPhase("DONE");
-    } else if (job.status === "FAILED") {
-      setErrorMsg(job.error || "Conversion failed. Please try again.");
-      setUpsell(false);
-      setPhase("ERROR");
-    }
-  }, [job]);
+  // Derived from `job` during render instead of synced via an effect —
+  // job completion/failure shows up immediately, no extra render pass.
+  const displayPhase: Phase =
+    job?.status === "COMPLETED" ? "DONE" : job?.status === "FAILED" ? "ERROR" : phase;
+  const downloadUrl = job?.status === "COMPLETED" ? `${job.path}?download=` : "";
+  const displayErrorMsg =
+    job?.status === "FAILED" ? job.error || "Conversion failed. Please try again." : errorMsg;
 
-  const busy = phase === "UPLOADING" || phase === "WORKING";
+  const busy = displayPhase === "UPLOADING" || displayPhase === "WORKING";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -200,9 +195,9 @@ const MediaConverter = () => {
             </div>
 
             <Button type="submit" color="pink" shadow="green" disabled={busy}>
-              {phase === "UPLOADING"
+              {displayPhase === "UPLOADING"
                 ? `UPLOADING ${uploadPct}%`
-                : phase === "WORKING"
+                : displayPhase === "WORKING"
                   ? "CONVERTING..."
                   : "CONVERT FILE"}
             </Button>
@@ -219,14 +214,14 @@ const MediaConverter = () => {
             className="h-full min-h-[400px]"
           >
             <div className="flex-grow flex flex-col items-start justify-center text-left w-full">
-              {phase === "IDLE" && (
+              {displayPhase === "IDLE" && (
                 <div className="text-green-500 font-bold uppercase tracking-widest">
                   <p className="mb-2">{`> Ready`}</p>
                   <p className="animate-pulse">{`> Waiting for a file..._`}</p>
                 </div>
               )}
 
-              {phase === "UPLOADING" && (
+              {displayPhase === "UPLOADING" && (
                 <div className="text-cyan-400 font-bold uppercase tracking-widest w-full">
                   <p className="mb-4">{`> Uploading your file... ${uploadPct}%`}</p>
                   <div className="w-full h-4 border-2 border-cyan-400 p-0.5">
@@ -238,7 +233,7 @@ const MediaConverter = () => {
                 </div>
               )}
 
-              {phase === "WORKING" && (
+              {displayPhase === "WORKING" && (
                 <div className="text-yellow-400 font-bold uppercase tracking-widest w-full">
                   <p className="mb-2">{`> Converting your file...`}</p>
                   <p className="mb-4">{`> Job: ${jobId?.slice(0, 8)}`}</p>
@@ -250,7 +245,7 @@ const MediaConverter = () => {
                 </div>
               )}
 
-              {phase === "DONE" && (
+              {displayPhase === "DONE" && (
                 <div className="text-pink-500 font-black uppercase tracking-widest w-full">
                   <p className="mb-2 text-2xl drop-shadow-[2px_2px_0_#00ffff]">{`> Done!`}</p>
                   <p className="mb-8 text-white">{`> Your file is ready.`}</p>
@@ -260,7 +255,7 @@ const MediaConverter = () => {
                 </div>
               )}
 
-              {phase === "ERROR" && <UpsellError message={errorMsg} upsell={upsell} />}
+              {displayPhase === "ERROR" && <UpsellError message={displayErrorMsg} upsell={upsell} />}
             </div>
           </TerminalPanel>
         </div>

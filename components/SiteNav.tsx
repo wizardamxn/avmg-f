@@ -6,24 +6,32 @@ import { useAuth } from "@/lib/auth";
 import Button from "@/components/ui/Button";
 import { cx } from "@/components/ui/theme";
 
+function NavLink({
+  href,
+  label,
+  pathname,
+}: {
+  href: string;
+  label: string;
+  pathname: string;
+}) {
+  const active = pathname === href || pathname.startsWith(href + "/");
+  return (
+    <Link
+      href={href}
+      className={cx(
+        "text-sm font-black uppercase tracking-widest transition-colors hover:text-white",
+        active ? "text-white" : "text-neutral-500",
+      )}
+    >
+      {label}
+    </Link>
+  );
+}
+
 export default function SiteNav() {
   const { user, loading, logout } = useAuth();
   const pathname = usePathname();
-
-  const NavLink = ({ href, label }: { href: string; label: string }) => {
-    const active = pathname === href || pathname.startsWith(href + "/");
-    return (
-      <Link
-        href={href}
-        className={cx(
-          "text-sm font-black uppercase tracking-widest transition-colors hover:text-white",
-          active ? "text-white" : "text-neutral-500",
-        )}
-      >
-        {label}
-      </Link>
-    );
-  };
 
   return (
     <nav className="w-full max-w-7xl mx-auto mb-12 flex items-center justify-between gap-4 border-b-4 border-neutral-800 pb-5">
@@ -35,8 +43,8 @@ export default function SiteNav() {
           AVMG
         </Link>
         <div className="hidden sm:flex items-center gap-6">
-          <NavLink href="/tools" label="Tools" />
-          <NavLink href="/dashboard" label="Dashboard" />
+          <NavLink href="/tools" label="Tools" pathname={pathname} />
+          <NavLink href="/dashboard" label="Dashboard" pathname={pathname} />
         </div>
       </div>
 

@@ -364,7 +364,7 @@ export default function Landing() {
   );
 }
 
-function TierRow({ ok, no, children }: { ok?: boolean; no?: boolean; children: React.ReactNode }) {
+function TierRow({ no, children }: { ok?: boolean; no?: boolean; children: React.ReactNode }) {
   const mark = no ? "[x]" : "[+]";
   const color = no ? "text-red-500" : "text-green-500";
   return (

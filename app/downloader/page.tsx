@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import api, { apiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useJobPolling } from "@/hooks/useJobPolling";
@@ -26,25 +26,20 @@ const UniversalDownloader = () => {
 
   const [phase, setPhase] = useState<Phase>("IDLE");
   const [jobId, setJobId] = useState<string | null>(null);
-  const [downloadUrl, setDownloadUrl] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [upsell, setUpsell] = useState(false);
 
   const job = useJobPolling(phase === "WORKING" ? jobId : null);
 
-  useEffect(() => {
-    if (!job) return;
-    if (job.status === "COMPLETED") {
-      setDownloadUrl(`${job.path}?download=`);
-      setPhase("DONE");
-    } else if (job.status === "FAILED") {
-      setErrorMsg(job.error || "Couldn't download this link.");
-      setUpsell(false);
-      setPhase("ERROR");
-    }
-  }, [job]);
+  // Derived from `job` during render instead of synced via an effect —
+  // job completion/failure shows up immediately, no extra render pass.
+  const displayPhase: Phase =
+    job?.status === "COMPLETED" ? "DONE" : job?.status === "FAILED" ? "ERROR" : phase;
+  const downloadUrl = job?.status === "COMPLETED" ? `${job.path}?download=` : "";
+  const displayErrorMsg =
+    job?.status === "FAILED" ? job.error || "Couldn't download this link." : errorMsg;
 
-  const busy = phase === "CONNECTING" || phase === "WORKING";
+  const busy = displayPhase === "CONNECTING" || displayPhase === "WORKING";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,9 +110,9 @@ const UniversalDownloader = () => {
             </Field>
 
             <Button type="submit" color="green" shadow="yellow" disabled={busy}>
-              {phase === "CONNECTING"
+              {displayPhase === "CONNECTING"
                 ? "CONNECTING..."
-                : phase === "WORKING"
+                : displayPhase === "WORKING"
                   ? "DOWNLOADING..."
                   : "DOWNLOAD"}
             </Button>
@@ -134,14 +129,14 @@ const UniversalDownloader = () => {
             className="h-full min-h-[400px]"
           >
             <div className="flex-grow flex flex-col items-start justify-center text-left w-full">
-              {phase === "IDLE" && (
+              {displayPhase === "IDLE" && (
                 <div className="text-orange-400 font-bold uppercase tracking-widest">
                   <p className="mb-2">{`> Ready`}</p>
                   <p className="animate-pulse">{`> Waiting for a link..._`}</p>
                 </div>
               )}
 
-              {phase === "CONNECTING" && (
+              {displayPhase === "CONNECTING" && (
                 <div className="text-yellow-400 font-bold uppercase tracking-widest w-full">
                   <p className="mb-4">{`> Connecting...`}</p>
                   <p className="mb-4 text-xs">{`> Fetching the video...`}</p>
@@ -151,7 +146,7 @@ const UniversalDownloader = () => {
                 </div>
               )}
 
-              {phase === "WORKING" && (
+              {displayPhase === "WORKING" && (
                 <div className="text-green-400 font-bold uppercase tracking-widest w-full">
                   <p className="mb-2">{`> Connected.`}</p>
                   <p className="mb-4">{`> Downloading: ${jobId?.slice(0, 8)}`}</p>
@@ -163,7 +158,7 @@ const UniversalDownloader = () => {
                 </div>
               )}
 
-              {phase === "DONE" && (
+              {displayPhase === "DONE" && (
                 <div className="text-cyan-400 font-black uppercase tracking-widest w-full">
                   <p className="mb-2 text-2xl drop-shadow-[2px_2px_0_#00ffff]">{`> Done!`}</p>
                   <p className="mb-8 text-white">{`> Your file is ready.`}</p>
@@ -173,7 +168,7 @@ const UniversalDownloader = () => {
                 </div>
               )}
 
-              {phase === "ERROR" && <UpsellError message={errorMsg} upsell={upsell} />}
+              {displayPhase === "ERROR" && <UpsellError message={displayErrorMsg} upsell={upsell} />}
             </div>
           </TerminalPanel>
         </div>

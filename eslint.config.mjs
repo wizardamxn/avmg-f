@@ -5,6 +5,13 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  {
+    rules: {
+      // UI copy is deliberately styled as "// LABEL TEXT" (terminal aesthetic),
+      // not accidental JS comments left as JSX text.
+      "react/jsx-no-comment-textnodes": "off",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
