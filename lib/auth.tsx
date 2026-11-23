@@ -21,7 +21,9 @@ type AuthContextValue = {
   usage: Usage;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name?: string) => Promise<void>;
+  /** Resolves true when the account must enter an emailed code before it can log in. */
+  signup: (email: string, password: string, name?: string) => Promise<boolean>;
+  verifyEmail: (email: string, code: string) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
 };
@@ -72,6 +74,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signup = useCallback(
     async (email: string, password: string, name?: string) => {
       const res = await api.post("/auth/signup", { email, password, name });
+      if (res.data.verify) return true; // no token until the emailed code is entered
+      setToken(res.data.token);
+      setUser(res.data.user);
+      await refresh();
+      return false;
+    },
+    [refresh],
+  );
+
+  const verifyEmail = useCallback(
+    async (email: string, code: string) => {
+      const res = await api.post("/auth/verify-email", { email, code });
       setToken(res.data.token);
       setUser(res.data.user);
       await refresh();
@@ -87,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, usage, loading, login, signup, logout, refresh }}
+      value={{ user, usage, loading, login, signup, verifyEmail, logout, refresh }}
     >
       {children}
     </AuthContext.Provider>

@@ -36,8 +36,8 @@ export default function SignupPage() {
     }
     setBusy(true);
     try {
-      await signup(email, password, name || undefined);
-      router.push("/tools");
+      const mustVerify = await signup(email, password, name || undefined);
+      router.push(mustVerify ? `/verify?email=${encodeURIComponent(email.trim().toLowerCase())}` : "/tools");
     } catch (err) {
       setError(apiError(err, "Signup failed. That email may already be taken."));
       setBusy(false);

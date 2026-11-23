@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { isAxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
@@ -27,6 +28,11 @@ export default function LoginPage() {
       await login(email, password);
       router.push("/tools");
     } catch (err) {
+      // Signed up but never entered the code: the server just emailed a fresh one.
+      if (isAxiosError(err) && err.response?.data?.error === "EMAIL_UNVERIFIED") {
+        router.push(`/verify?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+        return;
+      }
       setError(apiError(err, "Login failed. Check your email and password."));
       setBusy(false);
     }
